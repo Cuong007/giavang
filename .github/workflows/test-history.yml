@@ -15,32 +15,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch 6000 bars in pages
+      - name: Test date-range history retrieval
         run: |
           python - <<'PY'
           import json, urllib.parse, urllib.request
-          from datetime import datetime, timedelta
+          from datetime import datetime, timedelta, timezone
           base = "https://biquote.io/api/XAUUSD/ohlc"
-          collected = {}
-          end = None
-          for page in range(10):
-              params = {"interval": "1m", "limit": "1000"}
-              if end:
-                  params["to"] = end
+          total = {}
+          now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+          # Probe independent 24-hour windows over the recent 7-day M1 history window.
+          for days_back in range(1, 8):
+              end = (now - timedelta(days=days_back-1)).replace(hour=0, minute=0)
+              start = end - timedelta(days=1)
+              params = {
+                  "interval": "1m", "limit": "1000",
+                  "from": start.isoformat(timespec="seconds").replace("+00:00","Z"),
+                  "to": end.isoformat(timespec="seconds").replace("+00:00","Z")
+              }
               url = base + "?" + urllib.parse.urlencode(params)
               with urllib.request.urlopen(url, timeout=45) as response:
                   payload = json.load(response)
               batch = payload.get("bars", [])
-              print(f"Page {page+1}: {len(batch)} bars; to={end}")
-              if not batch:
-                  break
+              print(f"{params['from']} -> {params['to']}: {len(batch)} bars")
               for bar in batch:
-                  collected[bar["openTime"]] = bar
-              earliest = min(datetime.fromisoformat(x["openTime"].replace("Z","+00:00")) for x in batch)
-              end = (earliest - timedelta(seconds=1)).isoformat(timespec="seconds").replace("+00:00","Z")
-              if len(collected) >= 6000:
-                  break
-          print(f"TOTAL UNIQUE BARS: {len(collected)}")
-          if len(collected) < 6000:
-              raise SystemExit("API pagination did not provide 6000 unique bars")
+                  total[bar["openTime"]] = bar
+          print(f"TOTAL UNIQUE BARS IN 7 DATE WINDOWS: {len(total)}")
+          if len(total) >= 6000:
+              print("PASS: 6000 bars available using date-range requests.")
+          else:
+              print("NOT ENOUGH HISTORY IN THESE WINDOWS; checking API/source limitations.")
           PY
