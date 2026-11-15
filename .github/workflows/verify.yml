@@ -132,7 +132,7 @@ jobs:
           if (canvasCount < 1) throw new Error('Chart canvas was not created');
           if (await page.locator('.indicator-chip').count() !== 0) throw new Error('There must be no default indicators in the storage');
           // Full standalone IIFE script: syntax-check and store only; it must NOT execute.
-          const standalone = '/* fvg-indicator.js */\n(function(root){ "use strict"; root.__fvgExecuted = true; root.FVGIndicator = { init(){}, update(){}, reset(){} }; })(window);';
+          const standalone = '/* fvg-indicator.js */\n(function(root){ "use strict"; root.FVGIndicator = { init(ctx){ root.__fvgExecuted = true; this.series = ctx.addSeries(root.LightweightCharts.LineSeries, { color: "#e8b65b", lineWidth: 2 }); }, update(bar){ if (this.series) this.series.update({ time: bar.time, value: bar.close }); }, reset(){} }; })(window);';
           await page.locator('#indicatorCode').fill(standalone);
           await page.locator('#addIndicatorBtn').click();
           await page.waitForFunction(() => (document.getElementById('indicatorStatus')?.textContent || '').includes('Đã lưu fvg-indicator.js'));
@@ -141,11 +141,17 @@ jobs:
           await page.reload({ waitUntil: 'domcontentloaded' });
           await page.waitForFunction(() => document.querySelectorAll('.indicator-chip').length === 1);
           if (await page.evaluate(() => !!window.__fvgExecuted)) throw new Error('Stored indicator unexpectedly executed after reload');
+          const toggle = page.locator('.indicator-chip button').first();
+          if ((await toggle.innerText()) !== 'Kích hoạt') throw new Error('Stored indicator should be inactive by default');
+          await toggle.click();
+          await page.waitForFunction(() => !!window.__fvgExecuted && document.querySelector('.indicator-chip button')?.textContent === 'Tắt');
+          await page.locator('.indicator-chip button').first().click();
+          if ((await page.locator('.indicator-chip button').first().innerText()) !== 'Kích hoạt') throw new Error('Indicator did not deactivate');
           await page.locator('.indicator-chip button').last().click();
           if (await page.locator('.indicator-chip').count() !== 0) throw new Error('Stored indicator could not be removed');
           if (overlayCount !== 0) throw new Error('Chart startup overlay was not removed');
           if (errors.length) throw new Error('Browser errors: ' + errors.join('; '));
-          console.log('PASS: Chromium rendered chart; standalone JS script stored, persisted and removed without execution.');
+          console.log('PASS: Chromium rendered chart; standalone JS script stored inactive, explicitly activated, deactivated and removed.');
           await browser.close();
           JS
       - name: Check latest XAUUSD quote API
