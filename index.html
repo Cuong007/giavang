@@ -93,7 +93,6 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
 /* Gold Analyzer Web V2 — XAUUSD public MT5/CFD feed */
 (() => {
   "use strict";
-  const API = "https://biquote.io/api";
   const chartEl = document.getElementById("chart");
   const el = id => document.getElementById(id);
 
@@ -185,20 +184,27 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       volume: Number(b.tickVolume || b.volume || 0), isOpen: Boolean(b.isOpen)
     })).filter(b => Number.isFinite(b.time) && [b.open,b.high,b.low,b.close].every(Number.isFinite)).sort((a,b) => a.time-b.time);
   }
-  function aggregate3m(input) {
+  function aggregateBars(input, seconds) {
     const map = new Map();
     for (const b of input) {
-      const time = Math.floor(b.time / 180) * 180;
+      const time = Math.floor(b.time / seconds) * seconds;
       const prev = map.get(time);
       if (!prev) map.set(time, { ...b, time });
       else { prev.high = Math.max(prev.high,b.high); prev.low = Math.min(prev.low,b.low); prev.close = b.close; prev.volume += b.volume; prev.isOpen = b.isOpen; }
     }
     return [...map.values()];
   }
+  function toDukBars(raw) {
+    return (raw || []).map(b => ({
+      time: Math.floor(Number(b.timestamp) / 1000),
+      open: Number(b.open), high: Number(b.high), low: Number(b.low), close: Number(b.close),
+      volume: Number(b.volume || 0), isOpen: false
+    })).filter(b => Number.isFinite(b.time) && [b.open,b.high,b.low,b.close].every(Number.isFinite)).sort((a,b)=>a.time-b.time);
+  }
   async function loadCachedM1History() {
     const urls = [
-      "https://raw.githubusercontent.com/Cuong007/giavang/main/data/xauusd-1m.json?v=" + Math.floor(Date.now() / 60000),
-      "./data/xauusd-1m.json"
+      "https://raw.githubusercontent.com/Cuong007/giavang/main/data/dukascopy-xauusd.json?v=" + Date.now(),
+      "./data/dukascopy-xauusd.json"
     ];
     const errors = [];
     for (const url of urls) {
@@ -206,52 +212,40 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
         const response = await fetch(url, { cache: "no-store" });
         if (!response.ok) throw new Error("HTTP " + response.status);
         const json = await response.json();
-        if (!Array.isArray(json.bars) || json.bars.length < 6000) {
-          throw new Error("Cache chỉ có " + (json.bars?.length || 0) + " nến");
+        if (json.provider !== "Dukascopy" || !Array.isArray(json.timeframes?.m1) || json.timeframes.m1.length < 6000) {
+          throw new Error("Cache Dukascopy không hợp lệ hoặc thiếu 6.000 nến M1");
         }
         return json;
       } catch (error) { errors.push(url + ": " + error.message); }
     }
-    throw new Error("Không tải được cache 6.000 nến M1. " + errors.join(" | "));
+    throw new Error("Không tải được dữ liệu Dukascopy. " + errors.join(" | "));
   }
   async function loadCandles() {
     if (busy) return;
     busy = true;
     try {
-      let data, historyMeta = null, countLabel = "";
-      if (current === "1m" || current === "3m") {
-        const history = await loadCachedM1History();
-        historyMeta = history;
-        rawBars = toBars(history.bars);
-        data = current === "3m" ? aggregate3m(rawBars) : rawBars.map(b => ({...b}));
-        countLabel = current === "1m"
-          ? data.length + " nến · 6.000 M1 (GC=F căn chỉnh spot)"
-          : data.length + " nến · tổng hợp từ 6.000 M1";
-      } else {
-        const sourceTf = apiIntervals[current];
-        const url = `${API}/XAUUSD/ohlc?interval=${sourceTf}&limit=1000`;
-        const response = await fetch(url, { cache: "no-store" });
-        if (!response.ok) throw new Error("OHLC HTTP " + response.status);
-        const json = await response.json();
-        if (!Array.isArray(json.bars) || !json.bars.length) throw new Error("API chưa trả về nến XAUUSD");
-        data = toBars(json.bars);
-        rawBars = data.map(b => ({...b}));
-        countLabel = data.length + " nến · dữ liệu MT5 API";
+      const history = await loadCachedM1History();
+      const timeframeKeys = { "1m":"m1", "5m":"m5", "15m":"m15", "30m":"m30", "1H":"h1", "4H":"h4", "1D":"d1" };
+      const historyM1 = toDukBars(history.timeframes.m1);
+      rawBars = historyM1;
+      let data;
+      if (current === "3m") data = aggregateBars(historyM1, 180);
+      else if (current === "1m") data = historyM1;
+      else {
+        const native = history.timeframes[timeframeKeys[current]];
+        data = Array.isArray(native) && native.length ? toDukBars(native) : aggregateBars(historyM1, tfSeconds[current]);
       }
+      const countLabel = data.length.toLocaleString("en-US") + " nến · Dukascopy BID" + (current === "1m" ? " · tối thiểu 6.000 M1" : "");
       if (!data.length) throw new Error("Không có nến hợp lệ");
       bars = data;
       candles.setData(data.map(({time,open,high,low,close}) => ({time,open,high,low,close})));
       chart.timeScale().fitContent();
       el("chartTfLabel").textContent = "· " + tfNames[current];
       el("barCount").textContent = countLabel;
-      if (historyMeta && current === "1m") {
-        el("chartStatus").textContent = "Đã tải 6.000 nến M1 · lịch sử futures căn chỉnh spot";
-        setStatus("Đã nhận 6.000 nến M1 · dữ liệu lịch sử đã căn chỉnh", true);
-      } else {
-        el("chartStatus").textContent = "Đã tải dữ liệu biểu đồ";
-        setStatus("Đã nhận dữ liệu XAUUSD", true);
-      }
+      el("chartStatus").textContent = "Dukascopy BID · cập nhật cache " + new Date(history.generatedAt).toLocaleString("vi-VN");
+      setStatus("Dukascopy · " + (history.quote?.isLive ? "LIVE" : "giá gần nhất; chờ thị trường mở"), Boolean(history.quote?.isLive));
       updateBar(data[data.length - 1]);
+      if (history.quote) updateQuote(history.quote);
       refreshActiveIndicators(true);
     } catch (err) {
       setStatus("Lỗi tải nến: " + err.message, false);
@@ -271,8 +265,9 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     el("sLow").textContent = fmt(q.low);
     el("sOpen").textContent = Number.isFinite(Number(q.open)) ? fmt(q.open) : "—";
     el("sPrev").textContent = "—";
-    const age = Number(q.quoteAgeSeconds);
-    setStatus(q.marketState === "closed" || q.stale ? "Thị trường đóng · giá cũ" : "LIVE · MT5 feed" + (Number.isFinite(age) ? " · " + age + "s" : ""), q.marketState !== "closed" && !q.stale);
+    const ageSeconds = Number.isFinite(Number(q.timestamp)) ? Math.max(0, (Date.now() - Number(q.timestamp)) / 1000) : Infinity;
+    const live = Boolean(q.isLive) && ageSeconds <= 120;
+    setStatus(live ? "LIVE · Dukascopy BID · " + Math.round(ageSeconds) + "s" : "Dukascopy · giá gần nhất; chờ thị trường mở", live);
     patchQuote(mid, q.timestamp);
     if (soundEnabled && lastAlertPrice !== null && Math.abs(mid - lastAlertPrice) >= 1) beep();
     lastAlertPrice = mid;
@@ -292,30 +287,9 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   }
   async function fetchQuote() {
     try {
-      const r = await fetch(API + "/XAUUSD?allowStale=true", {cache:"no-store"});
-      if (!r.ok) throw new Error("Quote HTTP " + r.status);
-      updateQuote(await r.json());
-    } catch(e) { setStatus("Không lấy được giá: " + e.message, false); console.error(e); }
-  }
-  async function connectSignalR() {
-    try {
-      await new Promise((resolve,reject) => {
-        if (window.signalR) return resolve();
-        const s=document.createElement("script");
-        s.src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js";
-        s.onload=resolve; s.onerror=reject; document.head.appendChild(s);
-      });
-      hub = new signalR.HubConnectionBuilder().withUrl("https://biquote.io/hubs/tick", { withCredentials: false }).withAutomaticReconnect().build();
-      hub.on("ReceiveTick", tick => { if (tick && tick.symbol === "XAUUSD") updateQuote(tick); });
-      await hub.start();
-      await hub.invoke("Subscribe", ["XAUUSD"]);
-      setStatus("LIVE · SignalR MT5", true);
-    } catch(e) {
-      console.warn("SignalR unavailable; using REST fallback",e);
-      setStatus("REST fallback · MT5", false);
-      fetchQuote();
-      setInterval(fetchQuote, 10000);
-    }
+      const history = await loadCachedM1History();
+      if (history.quote) updateQuote(history.quote);
+    } catch(e) { setStatus("Không tải được dữ liệu Dukascopy: " + e.message, false); console.error(e); }
   }
   // Kho JS: chỉ chạy script khi người dùng chủ động bấm Kích hoạt.
   const indicatorStoreKey = "goldAnalyzerIndicatorScripts";
@@ -590,9 +564,9 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   sw.addEventListener("click",()=>{soundEnabled=!soundEnabled;sw.classList.toggle("on",soundEnabled);sw.setAttribute("aria-pressed",String(soundEnabled));if(soundEnabled)beep();});
   const ro=new ResizeObserver(entries=>{for(const entry of entries)chart.applyOptions({width:entry.contentRect.width,height:entry.contentRect.height});});
   ro.observe(chartEl);
-  loadCandles().then(() => { storedIndicators.filter(x => x.active).forEach(item => activateIndicator(item, true)); }); fetchQuote(); connectSignalR();
+  loadCandles().then(() => { storedIndicators.filter(x => x.active).forEach(item => activateIndicator(item, true)); });
   setInterval(()=>{if(!document.hidden)loadCandles();},60000);
-  document.addEventListener("visibilitychange",()=>{if(!document.hidden){loadCandles();fetchQuote();}});
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadCandles();});
 })();
 
 </script>
