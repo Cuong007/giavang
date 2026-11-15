@@ -254,7 +254,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
         s.src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js";
         s.onload=resolve; s.onerror=reject; document.head.appendChild(s);
       });
-      hub = new signalR.HubConnectionBuilder().withUrl("https://biquote.io/hubs/tick").withAutomaticReconnect().build();
+      hub = new signalR.HubConnectionBuilder().withUrl("https://biquote.io/hubs/tick", { withCredentials: false }).withAutomaticReconnect().build();
       hub.on("ReceiveTick", tick => { if (tick && tick.symbol === "XAUUSD") updateQuote(tick); });
       await hub.start();
       await hub.invoke("Subscribe", ["XAUUSD"]);
