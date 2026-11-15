@@ -18,7 +18,12 @@ Mở `index.html` bằng Chrome/Edge khi có Internet. Thư viện biểu đồ 
 - Nguồn công khai không cần API key theo tài liệu tại thời điểm tích hợp; dịch vụ có thể thay đổi/gián đoạn.
 - Không dùng dữ liệu này làm căn cứ giao dịch nếu chưa đối chiếu với broker của bạn.
 
+## Android APK
+- Dự án dùng Capacitor để đóng gói web app thành ứng dụng Android.
+- GitHub Actions workflow `Build Gold Analyzer Android APK` tự tạo APK debug và file ZIP mã nguồn mỗi khi cập nhật app hoặc chạy thủ công.
+- Tải APK tại tab Actions → chọn lần chạy `Build Gold Analyzer Android APK` → phần Artifacts → `gold-analyzer-android-build`.
+- APK debug dùng để cài thử/thẩm định; chưa phải bản phát hành Google Play đã ký.
+
 ## Chưa thực hiện
 - Chưa tích hợp Pine Script gốc vì chưa có mã Pine Script.
 - Chưa có backend/database riêng, đồng bộ đa thiết bị hoặc lưu offline.
-- Chưa đóng gói Android APK; đây hiện là web app chạy trong trình duyệt.
