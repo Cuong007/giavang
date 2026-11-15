@@ -1,0 +1,44 @@
+name: Test Yahoo gold history browser access
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/test-yahoo-cors.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Test Yahoo Finance CORS
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 >/tmp/server.log 2>&1 &
+          sleep 2
+          node --input-type=module <<'JS'
+          import { chromium } from 'playwright';
+          const browser = await chromium.launch({headless:true});
+          const page = await browser.newPage();
+          await page.goto('http://127.0.0.1:8000');
+          const result = await page.evaluate(async () => {
+            try {
+              const r = await fetch('https://query2.finance.yahoo.com/v8/finance/chart/GC%3DF?range=7d&interval=1m');
+              const j = await r.json();
+              return {ok:r.ok,status:r.status,count:j.chart?.result?.[0]?.timestamp?.length||0};
+            } catch(e) { return {ok:false,error:String(e)}; }
+          });
+          console.log('BROWSER YAHOO FETCH:', JSON.stringify(result));
+          await browser.close();
+          if (!result.ok || result.count < 6000) throw new Error('Yahoo 1m browser fetch unavailable or fewer than 6000 bars');
+          JS
