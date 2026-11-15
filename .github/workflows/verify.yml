@@ -100,12 +100,30 @@ jobs:
           console.log('DIAGNOSTIC page errors=' + JSON.stringify(errors));
           console.log('DIAGNOSTIC failed requests=' + JSON.stringify(failedRequests));
           if (!bars.includes('dữ liệu API')) throw new Error('No candles loaded: ' + bars);
+          const candleCount = Number.parseInt(bars, 10);
+          if (candleCount < 6000) throw new Error('Expected 6000 one-minute candles, got: ' + bars);
           if (canvasCount < 1) throw new Error('Chart canvas was not created');
+          await page.locator('#addIndicatorBtn').click();
+          await page.waitForFunction(() => (document.getElementById('indicatorStatus')?.textContent || '').includes('Đã nạp SMA 20'));
+          if (await page.locator('.indicator-chip').count() !== 1) throw new Error('SMA 20 JavaScript indicator did not register');
           if (overlayCount !== 0) throw new Error('Chart startup overlay was not removed');
           if (errors.length) throw new Error('Browser errors: ' + errors.join('; '));
           console.log('PASS: Chromium rendered chart with live API candles.');
           await browser.close();
           JS
+      - name: Check 6000 one-minute candle history
+        run: |
+          curl -fsSL --max-time 45 "https://biquote.io/api/XAUUSD/ohlc?interval=1m&limit=6000" -o /tmp/xauusd-6000.json
+          python - <<'PY'
+          import json
+          data = json.load(open("/tmp/xauusd-6000.json", encoding="utf-8"))
+          bars = data.get("bars")
+          if not isinstance(bars, list) or not bars:
+              raise SystemExit(f"6000-bar API returned no bars: {data}")
+          print(f"PASS: requested 6000 one-minute bars; API returned {len(bars)}")
+          if len(bars) < 6000:
+              raise SystemExit(f"API returned only {len(bars)} bars; expected 6000")
+          PY
       - name: Check latest XAUUSD quote API
         run: |
           curl -fsSL --max-time 30 "https://biquote.io/api/XAUUSD?allowStale=true" -o /tmp/xauusd-quote.json
