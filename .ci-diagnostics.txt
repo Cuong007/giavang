@@ -1,0 +1,12 @@
+Workflow run: 43717038254
+Commit: 3769de803aa7425daff34d63d8a6ad850f3b39b9
+
+/tmp/app.js:234
+    const header = code.match(/^\\s*\\/\\*\\s*[-=*\\s]*([^\\r\\n*]+\\.js)\\b/i);
+                              ^
+
+SyntaxError: Invalid regular expression flags
+    at wrapSafe (node:internal/modules/cjs/loader:1713:18)
+    at checkSyntax (node:internal/main/check_syntax:78:3)
+
+Node.js v22.23.4
