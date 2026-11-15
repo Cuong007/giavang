@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gold Analyzer — XAU/USD</title>
+<script src="https://unpkg.com/lightweight-charts@5.0.8/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{--bg:#0b0f14;--panel:#111821;--panel2:#151f2a;--line:#243140;--muted:#8392a5;--text:#e8eef5;--gold:#e8b65b;--green:#19c78a;--red:#f05d68;--blue:#66aaff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:#0d131a;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:750;letter-spacing:.2px}.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#f6d58b,#b77b26);display:grid;place-items:center;color:#17120a;font-weight:900;font-size:18px}
+.brand small{display:block;color:var(--muted);font-size:10px;font-weight:500;letter-spacing:1.4px}
+.top-right{display:flex;align-items:center;gap:15px}.market-status{display:flex;align-items:center;gap:7px;color:#9cabbc;font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:#e5a83d;box-shadow:0 0 10px #e5a83d77}.demo-tag{border:1px solid #70572d;color:#e8bd70;background:#322717;padding:5px 9px;border-radius:6px;font-size:10px;font-weight:750;letter-spacing:.8px}
+main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
+.instrument{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:18px;flex-wrap:wrap}
+.symbol{display:flex;align-items:center;gap:12px}.coin{width:42px;height:42px;border-radius:50%;background:#2a2419;border:1px solid #765a2d;color:#f2c36d;display:grid;place-items:center;font-weight:800;font-size:17px}
+.symbol h1{font-size:20px;margin:0 0 2px}.symbol p{margin:0;color:var(--muted);font-size:12px}
+.price-block{display:flex;align-items:flex-end;gap:14px}.price{font-size:29px;font-weight:750;letter-spacing:-.8px;font-variant-numeric:tabular-nums}.change{color:var(--green);font-weight:650;padding-bottom:5px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px}.stat label{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.stat strong{font-size:14px;font-variant-numeric:tabular-nums}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:14px;align-items:stretch}
+.chart-card,.side-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.chart-head{padding:13px 15px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.chart-title{font-weight:700}.chart-title span{color:var(--muted);font-weight:450;margin-left:7px;font-size:11px}
+.toolbar{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.tf{border:1px solid transparent;background:transparent;color:#9aabba;border-radius:6px;padding:6px 9px;font-size:12px}.tf:hover{background:#202c39}.tf.active{background:#3b3020;border-color:#71572d;color:#f2c46e}
+.tool-btn{border:1px solid var(--line);background:#151f2a;color:#b6c2cf;border-radius:7px;padding:6px 9px;font-size:12px}.tool-btn:hover{border-color:#8a6b36;color:#f2c46e}
+.chart-meta{display:flex;gap:13px;align-items:center;padding:9px 15px;color:var(--muted);font-size:11px}.ohlc{color:#c7d1dc;font-variant-numeric:tabular-nums}.up{color:var(--green)}.down{color:var(--red)}
+#chart{height:510px;width:100%;position:relative}.chart-footer{border-top:1px solid var(--line);padding:9px 14px;display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
+.side-card{padding:15px}.side-title{font-weight:700;margin-bottom:13px}.feed-item{padding:11px 0;border-top:1px solid var(--line)}.feed-item:first-of-type{border-top:0}.feed-label{color:var(--muted);font-size:11px;margin-bottom:4px}.feed-value{font-size:13px;font-weight:650}.placeholder{border:1px dashed #354354;border-radius:9px;padding:15px;color:#8b9bad;font-size:12px;line-height:1.6;background:#0f161e}
+.sound-row{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}.switch{width:36px;height:20px;border-radius:20px;background:#354354;position:relative;border:0}.switch:after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;background:#b8c4d0;border-radius:50%;transition:.2s}.switch.on{background:#187b60}.switch.on:after{left:19px;background:white}
+.notice{margin-top:15px;padding:11px 13px;border-radius:9px;background:#151e28;border:1px solid #263748;color:#91a2b5;font-size:11px;display:flex;gap:9px;align-items:flex-start}.notice b{color:#d7e0e9}
+.bottom{margin-top:16px;color:#66778b;font-size:11px;text-align:center;padding:8px}
+@media(max-width:900px){.workspace{grid-template-columns:1fr}.side-card{display:grid;grid-template-columns:1fr 1fr;gap:12px}.side-title{grid-column:1/-1;margin:0}.feed-item{border-top:1px solid var(--line)}#chart{height:430px}}
+@media(max-width:600px){.topbar{height:56px;padding:0 13px}.top-right{gap:8px}.market-status{display:none}main{padding:13px 10px}.instrument{margin-bottom:13px}.symbol h1{font-size:17px}.price-block{width:100%;align-items:center}.price{font-size:27px}.stats{grid-template-columns:repeat(2,1fr);gap:8px}.stat{padding:9px 11px}.chart-head{padding:11px 10px}.toolbar{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}.tf{flex:0 0 auto}#chart{height:390px}.chart-meta{padding:8px 10px;gap:8px;flex-wrap:wrap}.side-card{display:block}.feed-item{padding:9px 0}.demo-tag{font-size:9px;padding:4px 6px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+ <div class="brand"><div class="logo">G</div><div>GOLD ANALYZER<small>MARKET DESK</small></div></div>
+ <div class="top-right"><div class="market-status"><i class="dot"></i><span id="connectionText">Đang dùng dữ liệu minh họa</span></div><span class="demo-tag">DEMO DATA</span></div>
+</header>
+<main>
+ <section class="instrument">
+  <div class="symbol"><div class="coin">Au</div><div><h1>Gold Spot <span style="color:var(--muted);font-weight:500">/ U.S. Dollar</span></h1><p>XAU/USD · Spot Gold · USD</p></div></div>
+  <div class="price-block"><div class="price" id="lastPrice">2,658.42</div><div class="change" id="priceChange">+0.42% ▲</div></div>
+ </section>
+ <section class="stats">
+  <div class="stat"><label>OPEN</label><strong id="sOpen">2,647.31</strong></div>
+  <div class="stat"><label>HIGH</label><strong id="sHigh" class="up">2,662.80</strong></div>
+  <div class="stat"><label>LOW</label><strong id="sLow" class="down">2,644.15</strong></div>
+  <div class="stat"><label>PREV. CLOSE</label><strong id="sPrev">2,647.30</strong></div>
+ </section>
+ <section class="workspace">
+  <div class="chart-card">
+   <div class="chart-head">
+    <div class="chart-title">XAU/USD <span id="chartTfLabel">· 1 phút</span></div>
+    <div class="toolbar" id="timeframes">
+     <button class="tf active" data-tf="1m">1m</button><button class="tf" data-tf="3m">3m</button><button class="tf" data-tf="5m">5m</button><button class="tf" data-tf="15m">15m</button><button class="tf" data-tf="30m">30m</button><button class="tf" data-tf="1H">1H</button><button class="tf" data-tf="4H">4H</button><button class="tf" data-tf="1D">1D</button>
+    </div>
+    <div class="toolbar"><button class="tool-btn" id="fitBtn">⤢ Vừa màn hình</button><button class="tool-btn" id="resetBtn">↺ Đặt lại</button></div>
+   </div>
+   <div class="chart-meta"><span class="ohlc" id="ohlc">O 2,647.31　H 2,662.80　L 2,644.15　C 2,658.42</span><span class="up">● Tăng</span><span class="down">● Giảm</span></div>
+   <div id="chart"></div>
+   <div class="chart-footer"><span>Biểu đồ nến · USD</span><span id="barCount">300 nến minh họa</span></div>
+  </div>
+  <aside class="side-card">
+   <div class="side-title">Bảng điều khiển</div>
+   <div class="feed-item"><div class="feed-label">NGUỒN DỮ LIỆU</div><div class="feed-value">Chưa kết nối API</div></div>
+   <div class="feed-item"><div class="feed-label">TRẠNG THÁI BIỂU ĐỒ</div><div class="feed-value up">Đang hiển thị DEMO</div></div>
+   <div class="feed-item"><div class="feed-label">INDICATOR</div><div class="placeholder">Khu vực tích hợp Pine Script → JavaScript sẽ đặt tại đây. Chưa thêm indicator mặc định.</div></div>
+   <div class="sound-row"><div><div class="feed-value">Âm thanh cảnh báo</div><div class="feed-label">Bật khi tích hợp tín hiệu</div></div><button class="switch" id="soundSwitch" aria-label="Bật tắt âm thanh"></button></div>
+  </aside>
+ </section>
+ <div class="notice"><span>ⓘ</span><div><b>Lưu ý:</b> Đây là bản giao diện thử nghiệm sử dụng dữ liệu giả lập để kiểm tra biểu đồ và bố cục. Chưa có giá realtime, chưa lưu lịch sử thị trường và chưa phát tín hiệu giao dịch.</div></div>
+ <div class="bottom">GOLD ANALYZER · BẢN GIAO DIỆN V1</div>
+</main>
+</div>
+<script>
+(function(){
+ const el=document.getElementById('chart');
+ const chart=LightweightCharts.createChart(el,{
+  width:el.clientWidth,height:el.clientHeight,
+  layout:{background:{type:'solid',color:'#111821'},textColor:'#8292a5',fontFamily:'Inter, system-ui, sans-serif'},
+  grid:{vertLines:{color:'#1d2935'},horzLines:{color:'#1d2935'}},
+  crosshair:{mode:LightweightCharts.CrosshairMode.Normal,vertLine:{color:'#7e8fa3',labelBackgroundColor:'#344354'},horzLine:{color:'#7e8fa3',labelBackgroundColor:'#344354'}},
+  rightPriceScale:{borderColor:'#293746',scaleMargins:{top:.12,bottom:.12}},
+  timeScale:{borderColor:'#293746',timeVisible:true,secondsVisible:false},
+  handleScroll:{mouseWheel:true,pressedMouseMove:true},handleScale:{mouseWheel:true,pinch:true}
+ });
+ const candles=chart.addSeries(LightweightCharts.CandlestickSeries,{
+  upColor:'#19b985',downColor:'#ed5c68',borderUpColor:'#19b985',borderDownColor:'#ed5c68',wickUpColor:'#19b985',wickDownColor:'#ed5c68'
+ });
+ const fmt=n=>Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const tfSeconds={'1m':60,'3m':180,'5m':300,'15m':900,'30m':1800,'1H':3600,'4H':14400,'1D':86400};
+ const tfNames={'1m':'1 phút','3m':'3 phút','5m':'5 phút','15m':'15 phút','30m':'30 phút','1H':'1 giờ','4H':'4 giờ','1D':'1 ngày'};
+ let current='1m',base=2658.42,data=[];
+ function makeData(tf){
+  const step=tfSeconds[tf],now=Math.floor(Date.now()/1000/step)*step;
+  let p=2648 + (tf==='1D'? -8:0),out=[];
+  for(let i=299;i>=0;i--){
+   const wave=Math.sin(i*.105)*1.15+Math.sin(i*.031)*2.2;
+   const drift=(299-i)*.027;
+   let o=p,move=(Math.random()-.47)*2.2+Math.cos(i*.16)*.22;
+   let c=o+move,hi=Math.max(o,c)+Math.random()*1.15,lo=Math.min(o,c)-Math.random()*1.15;
+   out.push({time:now-i*step,open:+o.toFixed(2),high:+hi.toFixed(2),low:+lo.toFixed(2),close:+c.toFixed(2)});
+   p=c+wave*.018+drift*.002;
+  }
+  const shift=2658.42-out[out.length-1].close;
+  out=out.map(x=>({time:x.time,open:+(x.open+shift).toFixed(2),high:+(x.high+shift).toFixed(2),low:+(x.low+shift).toFixed(2),close:+(x.close+shift).toFixed(2)}));
+  return out;
+ }
+ function render(tf){
+  current=tf;data=makeData(tf);candles.setData(data);chart.timeScale().fitContent();
+  document.querySelectorAll('.tf').forEach(b=>b.classList.toggle('active',b.dataset.tf===tf));
+  document.getElementById('chartTfLabel').textContent='· '+tfNames[tf];
+  document.getElementById('barCount').textContent=data.length+' nến minh họa';
+  updateStats(data[data.length-1]);
+ }
+ function updateStats(bar){
+  document.getElementById('lastPrice').textContent=fmt(bar.close);
+  const pct=(bar.close-bar.open)/bar.open*100;
+  document.getElementById('priceChange').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'% '+(pct>=0?'▲':'▼');
+  document.getElementById('priceChange').style.color=pct>=0?'var(--green)':'var(--red)';
+  document.getElementById('ohlc').textContent=`O ${fmt(bar.open)}　H ${fmt(bar.high)}　L ${fmt(bar.low)}　C ${fmt(bar.close)}`;
+  document.getElementById('sOpen').textContent=fmt(bar.open);
+  document.getElementById('sHigh').textContent=fmt(bar.high);
+  document.getElementById('sLow').textContent=fmt(bar.low);
+  document.getElementById('sPrev').textContent=fmt(data[data.length-2].close);
+ }
+ document.getElementById('timeframes').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)render(b.dataset.tf)});
+ document.getElementById('fitBtn').onclick=()=>chart.timeScale().fitContent();
+ document.getElementById('resetBtn').onclick=()=>{chart.timeScale().fitContent();chart.priceScale('right').applyOptions({autoScale:true})};
+ const ro=new ResizeObserver(entries=>{for(const entry of entries){chart.applyOptions({width:entry.contentRect.width,height:entry.contentRect.height})}});
+ ro.observe(el);
+ const sw=document.getElementById('soundSwitch');sw.addEventListener('click',()=>{sw.classList.toggle('on');sw.setAttribute('aria-pressed',sw.classList.contains('on')?'true':'false')});
+ render('1m');
+})();
+</script>
+</body>
+</html>
