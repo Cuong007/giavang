@@ -29,33 +29,12 @@ Mở `index.html` bằng Chrome/Edge khi có Internet. Thư viện biểu đồ 
 - Chưa có backend/database riêng, đồng bộ đa thiết bị hoặc lưu offline.
 
 
-## Nến 1 phút và indicator JavaScript
-- Khung 1m yêu cầu tối đa 6.000 nến từ API XAUUSD; các khung thời gian còn lại hiện yêu cầu 1.000 nến.
-- Ứng dụng không chạy hoặc dịch Pine Script. Hãy chuyển Pine Script sang JavaScript trước, sau đó dán mã JavaScript vào ô **INDICATOR · JAVASCRIPT** trong bảng điều khiển và nhấn **Nạp indicator JS**.
-- Mã indicator phải là một biểu thức JavaScript trả về object theo mẫu dưới đây:
-
-```js
-({
-  name: "Tên indicator",
-  create({ chart, LWC, candles, getBars }) {
-    const line = chart.addSeries(LWC.LineSeries, {
-      color: "#e8b65b", lineWidth: 2, title: "Tên indicator"
-    });
-    return {
-      update(bars) {
-        // Tính toán và gọi line.setData([{ time, value }, ...])
-      },
-      destroy() {
-        chart.removeSeries(line);
-      }
-    };
-  }
-})
-```
-
-- `update(bars)` được gọi sau khi tải lịch sử và mỗi khi giá cập nhật. `bars` là mảng nến tăng dần theo thời gian, mỗi phần tử có `time` (Unix seconds), `open`, `high`, `low`, `close`.
-- Indicator đã nạp được lưu trong bộ nhớ trình duyệt trên thiết bị đó. Nút **Gỡ** xóa riêng indicator; **Xóa tất cả** gỡ toàn bộ.
-- Chỉ dán JavaScript từ nguồn đáng tin cậy: mã được thực thi trong trang và có thể truy cập dữ liệu/trạng thái của ứng dụng.
+## Kho lưu trữ indicator JavaScript
+- Trong bảng điều khiển, dán toàn bộ nội dung file JavaScript (bao gồm script độc lập/IIFE như `FVGIndicator`) vào ô **INDICATOR · JAVASCRIPT** rồi nhấn **Lưu mã JS**.
+- Ứng dụng chỉ kiểm tra cú pháp JavaScript và lưu nguyên văn mã vào bộ nhớ cục bộ của thiết bị. Mã **không được thực thi**, không được gắn lên biểu đồ và không có indicator mặc định.
+- Nút **Mở** đưa mã đã lưu trở lại khung soạn thảo; **Xóa** xóa từng mã; **Xóa toàn bộ kho** xóa tất cả mã đã lưu.
+- Kho được lưu bằng localStorage trên thiết bị/trình duyệt hiện tại; không đồng bộ giữa các thiết bị. Việc lưu trữ không chuyển đổi Pine Script sang JavaScript.
+- Chỉ lưu mã từ nguồn đáng tin cậy. Khi người dùng chủ động chọn cách chạy indicator trong tương lai, cần có cơ chế thực thi riêng và cảnh báo bảo mật.
 
 
 ## Lịch sử 6.000 nến M1
