@@ -149,9 +149,27 @@ jobs:
           if ((await page.locator('.indicator-chip button').first().innerText()) !== 'Kích hoạt') throw new Error('Indicator did not deactivate');
           await page.locator('.indicator-chip button').last().click();
           if (await page.locator('.indicator-chip').count() !== 0) throw new Error('Stored indicator could not be removed');
+          // Exercise the user's VN30 PRO-style API contract: init({chart,series,container}), update(candles,rawCandles,tf).
+          const legacy = '/* fvg-indicator.js */\\n(function(root){ const api={config:{showDay:true}, init(o){ if(!o.chart || !o.series || !o.container) throw new Error("legacy init context missing"); this.canvas=document.createElement("canvas"); this.canvas.width=o.container.clientWidth; this.canvas.height=o.container.clientHeight; this.canvas.style.cssText="position:absolute;left:0;top:0;width:100%;height:100%;z-index:4;pointer-events:none"; o.container.appendChild(this.canvas); this.ctx=this.canvas.getContext("2d"); }, update(candles,raw,tf){ root.__legacyArgs={candles:candles.length,raw:raw.length,tf}; this.ctx.fillStyle="#ff9800"; this.ctx.fillRect(24,24,90,24); }, reset(){}, }; root.FVGIndicator=api; })(window);';
+          await page.locator('#indicatorCode').fill(legacy);
+          await page.locator('#addIndicatorBtn').click();
+          await page.waitForFunction(() => (document.getElementById('indicatorStatus')?.textContent || '').includes('Đã lưu fvg-indicator.js'));
+          const legacyRow = page.locator('.indicator-chip').first();
+          await legacyRow.locator('button').filter({ hasText: 'Kích hoạt' }).click();
+          await page.waitForFunction(() => !!window.__legacyArgs);
+          const legacyResult = await page.evaluate(() => {
+            const canvas = [...document.querySelectorAll('#chart canvas')].at(-1);
+            const pixels = canvas?.getContext('2d')?.getImageData(30, 30, 70, 10).data || [];
+            let visible = false; for (let i=3;i<pixels.length;i+=4) if (pixels[i] > 0) { visible=true; break; }
+            return { args: window.__legacyArgs, visible, canvasCount: document.querySelectorAll('#chart canvas').length };
+          });
+          if (!legacyResult.visible || legacyResult.args.raw < 6000 || legacyResult.args.candles < 6000 || legacyResult.args.tf !== '1m') throw new Error('Legacy FVG API did not receive chart data or draw on chart: ' + JSON.stringify(legacyResult));
+          await legacyRow.locator('button').filter({ hasText: 'Tắt' }).click();
+          if (await page.locator('#chart canvas').count() !== canvasCount) throw new Error('Legacy overlay canvas was not removed on deactivate');
+          await page.locator('.indicator-chip').first().locator('button').filter({ hasText: 'Xóa' }).click();
           if (overlayCount !== 0) throw new Error('Chart startup overlay was not removed');
           if (errors.length) throw new Error('Browser errors: ' + errors.join('; '));
-          console.log('PASS: Chromium rendered chart; standalone JS script stored inactive, explicitly activated, deactivated and removed.');
+          console.log('PASS: Chromium chart; generic indicator lifecycle; legacy FVG API received 6000 M1 bars and painted visible overlay pixels; deactivate removed overlay.');
           await browser.close();
           JS
       - name: Check latest XAUUSD quote API
