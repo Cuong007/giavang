@@ -1,0 +1,40 @@
+name: Refresh XAUUSD data from Dukascopy
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+  push:
+    branches: [main, feature/dukascopy-apk]
+    paths:
+      - 'scripts/update-dukascopy.mjs'
+      - '.github/workflows/refresh-dukascopy.yml'
+permissions:
+  contents: write
+concurrency:
+  group: dukascopy-xauusd-refresh
+  cancel-in-progress: true
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Dukascopy client
+        run: npm install --no-save dukascopy-node
+      - name: Download XAUUSD data from Dukascopy only
+        run: node scripts/update-dukascopy.mjs
+      - name: Commit cache
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/dukascopy-xauusd.json
+          if git diff --cached --quiet; then
+            echo "Dukascopy cache unchanged."
+            exit 0
+          fi
+          git commit -m "Refresh XAUUSD data from Dukascopy"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push

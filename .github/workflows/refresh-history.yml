@@ -1,38 +1,8 @@
-name: Refresh XAUUSD 6000 M1 history
-
+name: Legacy mixed-source history refresh (disabled)
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '*/15 * * * *'
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/update-history.py'
-      - '.github/workflows/refresh-history.yml'
-
-permissions:
-  contents: write
-
-concurrency:
-  group: xauusd-history-refresh
-  cancel-in-progress: true
-
 jobs:
-  refresh:
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Generate history
-        run: python scripts/update-history.py
-      - name: Commit updated history
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/xauusd-1m.json
-          if git diff --cached --quiet; then
-            echo "History cache is unchanged."
-            exit 0
-          fi
-          git commit -m "Refresh XAUUSD 1m history cache"
-          git push
+      - run: echo "Disabled. XAUUSD cache is now generated exclusively from Dukascopy."
