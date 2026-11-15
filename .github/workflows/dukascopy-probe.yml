@@ -1,0 +1,31 @@
+name: Dukascopy data probe
+on:
+  push:
+    branches:
+      - test/dukascopy-data-probe
+    paths:
+      - '.github/workflows/dukascopy-probe.yml'
+      - 'scripts/dukascopy-probe.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Dukascopy client
+        run: npm install --no-save dukascopy-node
+      - name: Test historical M1 and realtime
+        run: node scripts/dukascopy-probe.mjs
+      - name: Upload probe report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dukascopy-probe-report
+          path: dukascopy-probe-report.json
+          if-no-files-found: warn
