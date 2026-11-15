@@ -99,7 +99,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
         const pad = n => String(n).padStart(2, "0");
         const date = pad(d.getDate()) + "/" + pad(d.getMonth() + 1);
         const clock = pad(d.getHours()) + ":" + pad(d.getMinutes());
-        return current === "1D" ? date + "/" + d.getFullYear() : date + " " + clock;
+        return date + "/" + d.getFullYear() + " " + clock;
       }
     },
     handleScroll: { mouseWheel: true, pressedMouseMove: true }, handleScale: { mouseWheel: true, pinch: true }
