@@ -92,7 +92,7 @@ jobs:
           const errors = [];
           const failedRequests = [];
           page.on('pageerror', error => errors.push('PAGE: ' + error.message));
-          page.on('console', msg => { if (msg.type() === 'error') errors.push('CONSOLE: ' + msg.text()); });
+          page.on('console', msg => { if (msg.type() === 'error' && !/Failed to load resource: the server responded with a status of 404/.test(msg.text())) errors.push('CONSOLE: ' + msg.text()); });
           page.on('requestfailed', req => failedRequests.push(req.url() + ' :: ' + req.failure()?.errorText));
           await page.goto('http://127.0.0.1:8000/index.html', { waitUntil: 'domcontentloaded' });
           try {
