@@ -217,8 +217,8 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   }
   async function loadCachedM1History() {
     const urls = [
-      "./data/xauusd-1m.json",
-      "https://raw.githubusercontent.com/Cuong007/giavang/main/data/xauusd-1m.json"
+      "https://raw.githubusercontent.com/Cuong007/giavang/main/data/xauusd-1m.json?v=" + Math.floor(Date.now() / 60000),
+      "./data/xauusd-1m.json"
     ];
     const errors = [];
     for (const url of urls) {
