@@ -517,9 +517,8 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
         if (def.description) text.title = def.description;
         label.append(check,text);
         const select = document.createElement("select"); select.setAttribute("aria-label","Âm thanh "+def.label);
-        [["default","Âm báo mặc định"],["custom","File đã chọn"]].forEach(([value,name])=>{const opt=document.createElement("option");opt.value=value;opt.textContent=name;select.append(opt);});
-        select.value = pref.sound === "custom" ? "custom" : "default";
-        select.disabled = !customAlertSoundName;
+        [["default","Âm báo mặc định"],["custom","File đã chọn"]].forEach(([value,name])=>{const opt=document.createElement("option");opt.value=value;opt.textContent=name;if(value==="custom")opt.disabled=!customAlertSoundName;select.append(opt);});
+        select.value = pref.sound === "custom" && customAlertSoundName ? "custom" : "default";
         select.addEventListener("change",()=>{const p=getAlertPref(item.id,def.id);p.sound=select.value;alertPrefs[alertPrefKey(item.id,def.id)]=p;saveAlertPrefs();});
         row.append(label,select); box.append(row);
       });
