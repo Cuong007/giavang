@@ -47,3 +47,34 @@ Mở `index.html` bằng Chrome/Edge khi có Internet. Thư viện biểu đồ 
 - Để giữ biểu đồ gần với XAUUSD spot, bộ tạo dữ liệu căn chỉnh lịch sử GC=F bằng chênh lệch trung vị so với các nến BiQuote XAUUSD MT5 trùng timestamp, rồi thay các nến trùng bằng nến spot MT5 thực tế.
 - Vì vậy 301 nến gần nhất là spot CFD MT5; phần lịch sử sâu là futures proxy đã căn chỉnh. Đây không phải 6.000 nến spot nguyên bản. Basis futures/spot có thể biến động; không dùng như dữ liệu khớp lệnh hoặc kiểm định cần độ chính xác tuyệt đối.
 - APK chứa bản cache tại thời điểm build. Web app đọc cache từ `data/xauusd-1m.json`; GitHub Actions cập nhật file định kỳ.
+
+
+## Chart navigation, OHLC and fullscreen
+- OHLC panel follows the candle under the crosshair; when the crosshair leaves the plot it returns to the latest candle.
+- Scheduled data refresh preserves the visible time range. The chart does not jump to the right edge; use **Đặt lại** when you want to fit the chart again.
+- **Toàn màn hình / Thu lại** toggles fullscreen for the chart panel.
+
+## Indicator-based sound alerts
+Only activated indicators are listed in the alert configuration. The master sound switch enables/disables playback; each declared event has its own enable checkbox and sound selection.
+- Choose an MP3/WAV/M4A/OGG file from device storage. The selected audio is stored locally in IndexedDB on that device (up to 15 MB); it is not uploaded to GitHub.
+- Each indicator must explicitly declare event definitions and emit the event when its condition occurs. The app does not guess signal logic by searching arbitrary JavaScript text.
+- For a generic indicator, use the context API:
+```js
+const api = {
+  init(context) {
+    context.alerts.define([
+      { id: "fvg.created", label: "FVG mới hình thành", description: "Khi xuất hiện vùng FVG" },
+      { id: "ema.cross", label: "EMA cắt nhau" }
+    ]);
+    this.context = context;
+  },
+  update(bar) {
+    // Call only when the actual condition is detected:
+    // this.context.alerts.emit("fvg.created", { message: "Bullish FVG" });
+  },
+  reset() {}
+};
+window.MyIndicator = api;
+```
+- For existing object-style/legacy indicators such as `window.FVGIndicator`, expose `api.alerts = [{ id, label, description }]` and call `api.alert("fvg.created", { message: "..." })` at the exact signal point.
+- Alerts are opt-in per event and rate-limited to one repeat per event every 15 seconds. Browser/Android audio playback must first be unlocked by the user using the sound switch.
