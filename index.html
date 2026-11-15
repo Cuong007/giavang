@@ -160,7 +160,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     rightPriceScale: { borderColor: "#293746", scaleMargins: { top: .12, bottom: .12 } },
     timeScale: {
       visible: true, borderVisible: true, borderColor: "#526273", ticksVisible: true,
-      timeVisible: true, secondsVisible: false, rightOffset: 8,
+      timeVisible: true, secondsVisible: false, rightOffset: 8, shiftVisibleRangeOnNewBar: false,
       tickMarkFormatter: (time, tickMarkType, locale) => {
         const d = typeof time === "number" ? new Date(time * 1000) : new Date(Date.UTC(time.year, time.month - 1, time.day));
         if (!Number.isFinite(d.getTime())) return "";
