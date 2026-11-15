@@ -27,7 +27,21 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
 .toolbar{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.tf{border:1px solid transparent;background:transparent;color:#9aabba;border-radius:6px;padding:6px 9px;font-size:12px}.tf:hover{background:#202c39}.tf.active{background:#3b3020;border-color:#71572d;color:#f2c46e}
 .tool-btn{border:1px solid var(--line);background:#151f2a;color:#b6c2cf;border-radius:7px;padding:6px 9px;font-size:12px}.tool-btn:hover{border-color:#8a6b36;color:#f2c46e}
 .chart-meta{display:flex;gap:13px;align-items:center;padding:9px 15px;color:var(--muted);font-size:11px}.ohlc{color:#c7d1dc;font-variant-numeric:tabular-nums}.up{color:var(--green)}.down{color:var(--red)}
-#chart{height:510px;width:100%;position:relative}.chart-footer{border-top:1px solid var(--line);padding:9px 14px;display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
+#chart{height:510px;width:100%;position:relative}
+.chart-card.is-fullscreen,.chart-card:fullscreen{position:fixed;inset:0;z-index:9999;width:100vw;height:100dvh;border-radius:0;display:flex;flex-direction:column;background:var(--panel)}
+.chart-card.is-fullscreen #chart,.chart-card:fullscreen #chart{height:auto;min-height:0;flex:1}
+.chart-card.is-fullscreen .chart-footer,.chart-card:fullscreen .chart-footer{flex-shrink:0}
+.alert-settings{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.alert-settings-title{font-size:12px;font-weight:700;margin-bottom:8px}
+.alert-file-row{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;color:var(--muted);font-size:11px}
+.alert-file-row input{width:100%;font-size:11px;color:var(--muted)}
+.alert-script{margin-top:9px;padding:8px;border:1px solid var(--line);border-radius:8px;background:#0e151d}
+.alert-script-title{font-size:11px;font-weight:700;color:#d8e2ec;margin-bottom:5px}
+.alert-rule{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:6px 0;border-top:1px solid #202b37;font-size:11px}
+.alert-rule label{display:flex;gap:6px;align-items:center;min-width:0}
+.alert-rule select{max-width:125px;background:#17222e;color:#cbd8e5;border:1px solid #354354;border-radius:5px;font-size:10px;padding:3px}
+.alert-note{font-size:10px;color:var(--muted);line-height:1.45;margin-top:6px}
+.chart-footer{border-top:1px solid var(--line);padding:9px 14px;display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
 .side-card{padding:15px}.side-title{font-weight:700;margin-bottom:13px}.feed-item{padding:11px 0;border-top:1px solid var(--line)}.feed-item:first-of-type{border-top:0}.feed-label{color:var(--muted);font-size:11px;margin-bottom:4px}.feed-value{font-size:13px;font-weight:650}.placeholder{border:1px dashed #354354;border-radius:9px;padding:15px;color:#8b9bad;font-size:12px;line-height:1.6;background:#0f161e}
 #indicatorCode{width:100%;min-height:185px;resize:vertical;background:#0b1118;color:#cbd8e5;border:1px solid #344557;border-radius:8px;padding:9px;font:11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2}
 .indicator-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
@@ -64,28 +78,36 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     <div class="toolbar" id="timeframes">
      <button class="tf active" data-tf="1m">1m</button><button class="tf" data-tf="3m">3m</button><button class="tf" data-tf="5m">5m</button><button class="tf" data-tf="15m">15m</button><button class="tf" data-tf="30m">30m</button><button class="tf" data-tf="1H">1H</button><button class="tf" data-tf="4H">4H</button><button class="tf" data-tf="1D">1D</button>
     </div>
-    <div class="toolbar"><button class="tool-btn" id="fitBtn">⤢ Vừa màn hình</button><button class="tool-btn" id="resetBtn">↺ Đặt lại</button></div>
+    <div class="toolbar"><button class="tool-btn" id="fullscreenBtn">⛶ Toàn màn hình</button><button class="tool-btn" id="resetBtn">↺ Đặt lại</button></div>
    </div>
-   <div class="chart-meta"><span class="ohlc" id="ohlc">O 2,647.31　H 2,662.80　L 2,644.15　C 2,658.42</span><span class="up">● Tăng</span><span class="down">● Giảm</span></div>
+   <div class="chart-meta"><span class="ohlc" id="ohlc">Di chuyển con trỏ lên nến để xem OHLC</span><span class="up">● Tăng</span><span class="down">● Giảm</span></div>
    <div id="chart"><div id="chartMessage" style="padding:24px;color:#91a2b5;font-size:13px">Đang khởi tạo biểu đồ và tải dữ liệu…</div></div>
    <div class="chart-footer"><span>Biểu đồ nến · USD</span><span id="barCount">Đang tải nến</span></div>
   </div>
   <aside class="side-card">
    <div class="side-title">Bảng điều khiển</div>
-   <div class="feed-item"><div class="feed-label">NGUỒN DỮ LIỆU</div><div class="feed-value">MT5 XAUUSD + GC=F lịch sử căn chỉnh</div></div>
+   <div class="feed-item"><div class="feed-label">NGUỒN DỮ LIỆU</div><div class="feed-value">Dukascopy · XAUUSD BID</div></div>
    <div class="feed-item"><div class="feed-label">TRẠNG THÁI BIỂU ĐỒ</div><div class="feed-value up" id="chartStatus">Đang khởi tạo biểu đồ…</div></div>
    <div class="feed-item indicator-feed">
     <div class="feed-label">INDICATOR · JAVASCRIPT</div>
-    <div class="placeholder" style="margin-bottom:9px">Dán toàn bộ file .js rồi bấm Lưu. Mã mới lưu mặc định chưa kích hoạt. Chỉ mã được bấm <b>Kích hoạt</b> mới chạy. Hỗ trợ API chung <b>init(context)/update(bar)</b> và API biểu đồ như <b>FVGIndicator.init({ chart, series, container })</b>, <b>update(candles, rawCandles, timeframe)</b>.</div>
+    <div class="placeholder" style="margin-bottom:9px">Dán toàn bộ file .js rồi bấm Lưu. Chỉ indicator đã kích hoạt mới chạy và mới xuất hiện trong phần cảnh báo. Script khai báo sự kiện qua <b>api.alerts</b> (hoặc <b>context.alerts.define()</b>) và phát tín hiệu bằng <b>api.alert(id, data)</b> / <b>context.alerts.emit(id, data)</b>.</div>
     <textarea id="indicatorCode" spellcheck="false" aria-label="Mã indicator JavaScript" placeholder="Dán toàn bộ mã JavaScript indicator vào đây..."></textarea>
     <div class="indicator-actions"><button class="tool-btn" id="addIndicatorBtn">＋ Lưu mã JS</button><button class="tool-btn" id="clearIndicatorsBtn">Xóa toàn bộ kho</button></div>
     <div id="indicatorStatus" class="feed-label" style="margin-top:8px">Kho đang trống. Chưa có indicator nào được cài hoặc chạy.</div>
     <div id="activeIndicators"></div>
    </div>
-   <div class="sound-row"><div><div class="feed-value">Âm thanh cảnh báo</div><div class="feed-label">Bật để nhận cảnh báo tín hiệu</div></div><button class="switch" id="soundSwitch" aria-label="Bật tắt âm thanh"></button></div>
+   <div class="sound-row"><div><div class="feed-value">Âm thanh cảnh báo</div><div class="feed-label">Bật để nhận cảnh báo đã chọn bên dưới</div></div><button class="switch" id="soundSwitch" aria-label="Bật tắt âm thanh" aria-pressed="false"></button></div>
+   <div class="alert-settings">
+    <div class="alert-settings-title">CẤU HÌNH CẢNH BÁO THEO INDICATOR</div>
+    <label class="alert-file-row">Chọn âm thanh từ điện thoại (MP3, WAV, M4A, OGG)
+     <input id="alertSoundFile" type="file" accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/ogg,audio/*">
+     <span id="alertSoundName">Chưa chọn file âm thanh</span>
+    </label>
+    <div id="alertRules"><div class="alert-note">Kích hoạt indicator có khai báo sự kiện để cấu hình cảnh báo tại đây.</div></div>
+   </div>
   </aside>
  </section>
- <div class="notice"><span>ⓘ</span><div><b>Lưu ý dữ liệu:</b> Các nến gần nhất lấy từ XAUUSD MT5/CFD. Phần lịch sử sâu dùng GC=F (hợp đồng vàng COMEX) đã căn chỉnh bằng chênh lệch trung vị so với các nến spot trùng thời gian. Đây là dữ liệu proxy, không phải 6.000 nến spot nguyên bản; giá futures và spot có thể khác nhau. Không có volume giao dịch tập trung cho CFD.</div></div>
+ <div class="notice"><span>ⓘ</span><div><b>Nguồn dữ liệu:</b> XAUUSD BID từ Dukascopy. Không ghép dữ liệu từ nhà cung cấp khác. Realtime chỉ được xác nhận khi nhận được tick mới.</div></div>
  <div class="bottom">GOLD ANALYZER · WEB BUILD V2 · LIVE DATA</div>
 </main>
 </div>
@@ -158,7 +180,16 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   const tfSeconds = { "1m":60, "3m":180, "5m":300, "15m":900, "30m":1800, "1H":3600, "4H":14400, "1D":86400 };
   const apiIntervals = { "1m":"1m", "5m":"5m", "15m":"15m", "30m":"30m", "1H":"1h", "4H":"4h", "1D":"1d" };
   const tfNames = { "1m":"1 phút", "3m":"3 phút", "5m":"5 phút", "15m":"15 phút", "30m":"30 phút", "1H":"1 giờ", "4H":"4 giờ", "1D":"1 ngày" };
-  let current = "1m", bars = [], rawBars = [], busy = false, hub = null, soundEnabled = false, audioCtx = null, lastAlertPrice = null;
+  let current = "1m", bars = [], rawBars = [], busy = false, hub = null, soundEnabled = false, audioCtx = null, lastAlertPrice = null, chartHasInitialData = false;
+  const alertPrefsKey = "goldAnalyzerAlertPrefs";
+  let alertPrefs = {};
+  let customAlertSoundName = localStorage.getItem("goldAnalyzerAlertSoundName") || "";
+  let customAlertSoundUrl = null;
+  let lastAlertTimes = new Map();
+  try { alertPrefs = JSON.parse(localStorage.getItem(alertPrefsKey) || "{}") || {}; } catch (_) { alertPrefs = {}; }
+  function saveAlertPrefs() { localStorage.setItem(alertPrefsKey, JSON.stringify(alertPrefs)); }
+  function alertPrefKey(indicatorId, eventId) { return indicatorId + "::" + eventId; }
+  function getAlertPref(indicatorId, eventId) { return alertPrefs[alertPrefKey(indicatorId,eventId)] || { enabled:false, sound:"default" }; }
   function setStatus(text, good) {
     el("connectionText").textContent = text;
     const dot = document.querySelector(".dot");
@@ -237,9 +268,16 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       }
       const countLabel = data.length + " nến · Dukascopy BID" + (current === "1m" ? " · tối thiểu 6.000 M1" : "");
       if (!data.length) throw new Error("Không có nến hợp lệ");
+      const previousVisibleRange = chartHasInitialData ? chart.timeScale().getVisibleRange() : null;
       bars = data;
       candles.setData(data.map(({time,open,high,low,close}) => ({time,open,high,low,close})));
-      chart.timeScale().fitContent();
+      if (previousVisibleRange) {
+        try { chart.timeScale().setVisibleRange(previousVisibleRange); }
+        catch (_) { /* giữ vị trí người dùng khi cache được cập nhật */ }
+      } else {
+        chart.timeScale().fitContent();
+        chartHasInitialData = true;
+      }
       el("chartTfLabel").textContent = "· " + tfNames[current];
       el("barCount").textContent = countLabel;
       el("chartStatus").textContent = "Dukascopy BID · cập nhật cache " + new Date(history.generatedAt).toLocaleString("vi-VN");
@@ -318,6 +356,11 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   function makeIndicatorContext(record, series) {
     return {
       chart,
+      alerts: {
+        define: definitions => registerIndicatorAlerts(record, definitions),
+        emit: (eventId, details) => emitIndicatorAlert(record.id, eventId, details)
+      },
+      alert: (eventId, details) => emitIndicatorAlert(record.id, eventId, details),
       candles,
       LightweightCharts,
       container: chartEl,
@@ -369,9 +412,10 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       runningIndicators.delete(id);
     }
     const item = storedIndicators.find(x => x.id === id);
-    if (item) item.active = false;
+    if (item) { item.active = false; item.alertDefinitions = []; }
     saveIndicatorStore();
     renderIndicatorList();
+    renderAlertSettings();
     if (!quiet && item) el("indicatorStatus").textContent = "Đã tắt " + item.name + " và gỡ các series do context tạo.";
   }
   function activateIndicator(item, quiet) {
@@ -392,6 +436,9 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       const api = findIndicatorApi(item);
       const legacy = isLegacyChartIndicator(api);
       const context = makeIndicatorContext(item, series);
+      api.alert = (eventId, details) => emitIndicatorAlert(item.id, eventId, details);
+      api.defineAlerts = definitions => registerIndicatorAlerts(item, definitions);
+      if (Array.isArray(api.alerts)) registerIndicatorAlerts(item, api.alerts);
       if (typeof api.init === "function") {
         if (legacy) api.init({ chart, series: candles, container: chartEl, rightOffset: 25 });
         else api.init(context);
@@ -410,6 +457,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       item.active = true;
       saveIndicatorStore();
       renderIndicatorList();
+      renderAlertSettings();
       if (!quiet) el("indicatorStatus").textContent = "Đã kích hoạt " + item.name + " trên biểu đồ.";
     } catch (error) {
       for (const s of series) { try { chart.removeSeries(s); } catch (_) {} }
@@ -420,6 +468,63 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       el("indicatorStatus").textContent = "Không kích hoạt được " + item.name + ": " + error.message;
       console.error("Indicator activation error:", error);
     }
+  }
+  function registerIndicatorAlerts(item, definitions) {
+    const clean = (Array.isArray(definitions) ? definitions : []).map(x => ({
+      id: String(x.id || "").trim().slice(0,80),
+      label: String(x.label || x.title || x.id || "Sự kiện").trim().slice(0,100),
+      description: String(x.description || "").trim().slice(0,180)
+    })).filter(x => /^[a-zA-Z0-9_.:-]+$/.test(x.id));
+    item.alertDefinitions = [...new Map(clean.map(x => [x.id,x])).values()];
+    renderAlertSettings();
+  }
+  function emitIndicatorAlert(indicatorId, eventId, details) {
+    const item = storedIndicators.find(x => x.id === indicatorId);
+    if (!item || !runningIndicators.has(indicatorId) || !item.active || !soundEnabled) return;
+    const pref = getAlertPref(indicatorId,eventId);
+    if (!pref.enabled) return;
+    const key = alertPrefKey(indicatorId,eventId), now = Date.now();
+    if (now - (lastAlertTimes.get(key) || 0) < 15000) return;
+    lastAlertTimes.set(key,now);
+    playConfiguredAlert(pref.sound);
+    const suffix = details && (details.message || details.text) ? " · " + String(details.message || details.text).slice(0,100) : "";
+    el("indicatorStatus").textContent = "Cảnh báo: " + item.name + " · " + eventId + suffix;
+  }
+  function renderAlertSettings() {
+    const root = el("alertRules");
+    if (!root) return;
+    root.replaceChildren();
+    const active = storedIndicators.filter(item => runningIndicators.has(item.id) && item.active);
+    if (!active.length) {
+      const note = document.createElement("div"); note.className = "alert-note";
+      note.textContent = "Chỉ hiển thị cảnh báo của indicator đang kích hoạt."; root.append(note); return;
+    }
+    active.forEach(item => {
+      const box = document.createElement("div"); box.className = "alert-script";
+      const title = document.createElement("div"); title.className = "alert-script-title"; title.textContent = item.name; box.append(title);
+      const defs = item.alertDefinitions || [];
+      if (!defs.length) {
+        const note = document.createElement("div"); note.className = "alert-note";
+        note.textContent = "Script chưa khai báo sự kiện. Thêm api.alerts = [{ id, label, description }] và gọi api.alert(id) tại điều kiện cần cảnh báo.";
+        box.append(note);
+      } else defs.forEach(def => {
+        const row = document.createElement("div"); row.className = "alert-rule";
+        const label = document.createElement("label");
+        const check = document.createElement("input"); check.type = "checkbox";
+        const pref = getAlertPref(item.id,def.id); check.checked = Boolean(pref.enabled);
+        check.addEventListener("change",()=>{const p=getAlertPref(item.id,def.id);p.enabled=check.checked;alertPrefs[alertPrefKey(item.id,def.id)]=p;saveAlertPrefs();});
+        const text = document.createElement("span"); text.textContent = def.label;
+        if (def.description) text.title = def.description;
+        label.append(check,text);
+        const select = document.createElement("select"); select.setAttribute("aria-label","Âm thanh "+def.label);
+        [["default","Âm báo mặc định"],["custom","File đã chọn"]].forEach(([value,name])=>{const opt=document.createElement("option");opt.value=value;opt.textContent=name;select.append(opt);});
+        select.value = pref.sound === "custom" ? "custom" : "default";
+        select.disabled = !customAlertSoundName;
+        select.addEventListener("change",()=>{const p=getAlertPref(item.id,def.id);p.sound=select.value;alertPrefs[alertPrefKey(item.id,def.id)]=p;saveAlertPrefs();});
+        row.append(label,select); box.append(row);
+      });
+      root.append(box);
+    });
   }
   function refreshActiveIndicators(replay) {
     for (const [id, running] of runningIndicators) {
@@ -552,16 +657,75 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+.12);
     } catch(e) { console.warn("Audio unavailable",e); }
   }
+  function playConfiguredAlert(kind) {
+    if (kind === "custom" && customAlertSoundUrl) {
+      try { const audio = new Audio(customAlertSoundUrl); audio.volume = 1; audio.play().catch(()=>beep()); return; }
+      catch (_) {}
+    }
+    beep();
+  }
+  function openSoundDatabase() {
+    return new Promise((resolve,reject)=>{
+      if (!window.indexedDB) return reject(new Error("Thiết bị không hỗ trợ lưu âm thanh"));
+      const req=indexedDB.open("GoldAnalyzerSounds",1);
+      req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains("files"))req.result.createObjectStore("files");};
+      req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);
+    });
+  }
+  async function loadCustomAlertSound() {
+    if (!customAlertSoundName) return;
+    try { const db=await openSoundDatabase(); const blob=await new Promise((resolve,reject)=>{const tx=db.transaction("files","readonly");const req=tx.objectStore("files").get("alert");req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
+      if (blob) { if(customAlertSoundUrl)URL.revokeObjectURL(customAlertSoundUrl);customAlertSoundUrl=URL.createObjectURL(blob); }
+    } catch(e) { console.warn("Cannot load custom alert sound",e); }
+    el("alertSoundName").textContent=customAlertSoundName;
+    renderAlertSettings();
+  }
+  el("alertSoundFile").addEventListener("change",async event=>{
+    const file=event.target.files && event.target.files[0]; if(!file)return;
+    if (!/^audio\//i.test(file.type) && !/\.(mp3|wav|m4a|ogg|aac)$/i.test(file.name)) { el("alertSoundName").textContent="File không phải định dạng âm thanh hỗ trợ."; return; }
+    if (file.size > 15*1024*1024) { el("alertSoundName").textContent="File quá lớn (tối đa 15 MB)."; return; }
+    try { const db=await openSoundDatabase(); await new Promise((resolve,reject)=>{const tx=db.transaction("files","readwrite");tx.objectStore("files").put(file,"alert");tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
+      customAlertSoundName=file.name;localStorage.setItem("goldAnalyzerAlertSoundName",file.name);
+      if(customAlertSoundUrl)URL.revokeObjectURL(customAlertSoundUrl);customAlertSoundUrl=URL.createObjectURL(file);
+      el("alertSoundName").textContent="Đã lưu: "+file.name;renderAlertSettings();
+    } catch(e) { el("alertSoundName").textContent="Không lưu được file: "+e.message; }
+  });
+  loadCustomAlertSound();
   document.getElementById("timeframes").addEventListener("click", e => {
     const btn=e.target.closest("[data-tf]"); if(!btn || btn.dataset.tf===current) return;
     current=btn.dataset.tf;
     document.querySelectorAll(".tf").forEach(b=>b.classList.toggle("active",b===btn));
     loadCandles();
   });
-  el("fitBtn").onclick=()=>chart.timeScale().fitContent();
-  el("resetBtn").onclick=()=>{chart.timeScale().fitContent();chart.priceScale("right").applyOptions({autoScale:true});};
+  const fullscreenBtn=el("fullscreenBtn"), chartCard=document.querySelector(".chart-card");
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement === chartCard) await document.exitFullscreen();
+      else if (chartCard.requestFullscreen) await chartCard.requestFullscreen();
+      else chartCard.classList.toggle("is-fullscreen");
+    } catch (_) { chartCard.classList.toggle("is-fullscreen"); }
+    updateFullscreenButton();
+  }
+  function updateFullscreenButton() {
+    const active=document.fullscreenElement===chartCard || chartCard.classList.contains("is-fullscreen");
+    fullscreenBtn.textContent=active?"↙ Thu lại":"⛶ Toàn màn hình";
+  }
+  fullscreenBtn.onclick=toggleFullscreen;
+  document.addEventListener("fullscreenchange",updateFullscreenButton);
+  document.addEventListener("keydown",event=>{if(event.key==="Escape"&&chartCard.classList.contains("is-fullscreen")){chartCard.classList.remove("is-fullscreen");updateFullscreenButton();}});
+  el("resetBtn").onclick=()=>{chart.timeScale().fitContent();chart.priceScale("right").applyOptions({autoScale:true});chartHasInitialData=true;};
   const sw=el("soundSwitch");
-  sw.addEventListener("click",()=>{soundEnabled=!soundEnabled;sw.classList.toggle("on",soundEnabled);sw.setAttribute("aria-pressed",String(soundEnabled));if(soundEnabled)beep();});
+  sw.addEventListener("click",()=>{soundEnabled=!soundEnabled;sw.classList.toggle("on",soundEnabled);sw.setAttribute("aria-pressed",String(soundEnabled));if(soundEnabled){if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();beep();}});
+  chart.subscribeCrosshairMove(param=>{
+    const candle=param && param.seriesData ? param.seriesData.get(candles) : null;
+    if(candle && Number.isFinite(candle.open)) {
+      el("ohlc").textContent="O "+fmt(candle.open)+"　H "+fmt(candle.high)+"　L "+fmt(candle.low)+"　C "+fmt(candle.close);
+    } else if(bars.length) {
+      const latest=bars[bars.length-1];
+      el("ohlc").textContent="O "+fmt(latest.open)+"　H "+fmt(latest.high)+"　L "+fmt(latest.low)+"　C "+fmt(latest.close);
+    }
+  });
+  renderAlertSettings();
   const ro=new ResizeObserver(entries=>{for(const entry of entries)chart.applyOptions({width:entry.contentRect.width,height:entry.contentRect.height});});
   ro.observe(chartEl);
   loadCandles().then(() => { storedIndicators.filter(x => x.active).forEach(item => activateIndicator(item, true)); });
