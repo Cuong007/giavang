@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'index.html'
-      - 'scripts/update-history.py'
+      - 'scripts/update-dukascopy.mjs'
       - 'README.md'
       - '.github/workflows/verify.yml'
       - '.github/workflows/android.yml'
@@ -57,33 +57,23 @@ jobs:
         run: |
           curl -fsSL --max-time 30 https://unpkg.com/lightweight-charts@5.0.8/dist/lightweight-charts.standalone.production.js -o /tmp/lightweight-charts.js
           test -s /tmp/lightweight-charts.js
-      - name: Check XAUUSD candle API
+      - name: Generate and validate Dukascopy-only history
         run: |
-          curl -fsSL --max-time 30 "https://biquote.io/api/XAUUSD/ohlc?interval=1m&limit=5" -o /tmp/xauusd.json
+          npm install --no-save dukascopy-node
+          node scripts/update-dukascopy.mjs
           python - <<'PY'
           import json
-          data = json.load(open("/tmp/xauusd.json", encoding="utf-8"))
-          bars = data.get("bars")
-          if data.get("symbol") != "XAUUSD" or not isinstance(bars, list) or not bars:
-              raise SystemExit(f"Unexpected OHLC response: {data}")
-          required = {"openTime", "open", "high", "low", "close"}
-          if not required.issubset(bars[0]):
-              raise SystemExit(f"OHLC bar missing fields: {bars[0]}")
-          print(f"PASS: {len(bars)} XAUUSD 1m bars received; latest close={bars[0]['close']}")
-          PY
-      - name: Validate cached 6000 M1 history
-        run: |
-          python - <<'PY'
-          import json
-          data = json.load(open("data/xauusd-1m.json", encoding="utf-8"))
-          bars = data.get("bars", [])
-          if data.get("symbol") != "XAUUSD" or data.get("interval") != "1m" or len(bars) < 6000:
-              raise SystemExit(f"Invalid cached history: symbol={data.get('symbol')} interval={data.get('interval')} count={len(bars)}")
-          if len({x["openTime"] for x in bars}) != len(bars):
-              raise SystemExit("Duplicate timestamps in cached history")
-          if bars != sorted(bars, key=lambda x: x["openTime"]):
-              raise SystemExit("Cached bars are not in ascending time order")
-          print(f"PASS: {len(bars)} ordered unique M1 candles; source={data.get('historySource')}")
+          data = json.load(open("data/dukascopy-xauusd.json", encoding="utf-8"))
+          bars = data.get("timeframes", {}).get("m1", [])
+          if data.get("provider") != "Dukascopy" or data.get("symbol") != "XAUUSD" or len(bars) < 6000:
+              raise SystemExit(f"Invalid Dukascopy cache: {data.get('provider')} {data.get('symbol')} {len(bars)}")
+          stamps = [x["timestamp"] for x in bars]
+          if len(stamps) != len(set(stamps)) or stamps != sorted(stamps):
+              raise SystemExit("M1 timestamps are duplicate or unordered")
+          for tf in ("m5", "m15", "m30", "h1", "h4", "d1"):
+              if not data.get("timeframes", {}).get(tf):
+                  raise SystemExit(f"Missing Dukascopy timeframe: {tf}")
+          print(f"PASS: {len(bars)} unique M1 candles; all higher timeframes also come from Dukascopy.")
           PY
       - name: Install headless browser
         run: |
@@ -111,13 +101,13 @@ jobs:
           } catch {}
           const remoteHistory = await page.evaluate(async () => {
             try {
-              const r = await fetch('https://raw.githubusercontent.com/Cuong007/giavang/main/data/xauusd-1m.json?ci=' + Date.now());
+              const r = await fetch('/data/dukascopy-xauusd.json?ci=' + Date.now());
               const j = await r.json();
-              return { ok: r.ok, count: j.bars?.length || 0 };
+              return { ok: r.ok, count: j.timeframes?.m1?.length || 0, provider: j.provider };
             } catch (e) { return { ok: false, error: String(e) }; }
           });
           console.log('DIAGNOSTIC remote history=' + JSON.stringify(remoteHistory));
-          if (!remoteHistory.ok || remoteHistory.count < 6000) throw new Error('Remote 6000-bar cache unavailable: ' + JSON.stringify(remoteHistory));
+          if (!remoteHistory.ok || remoteHistory.count < 6000 || remoteHistory.provider !== 'Dukascopy') throw new Error('Dukascopy 6000-bar cache unavailable: ' + JSON.stringify(remoteHistory));
           const canvasCount = await page.locator('#chart canvas').count();
           const overlayCount = await page.locator('#chartMessage').count();
           const bars = await page.locator('#barCount').innerText();
@@ -172,13 +162,3 @@ jobs:
           console.log('PASS: Chromium chart; generic indicator lifecycle; legacy FVG API received 6000 M1 bars and painted visible overlay pixels; deactivate removed overlay.');
           await browser.close();
           JS
-      - name: Check latest XAUUSD quote API
-        run: |
-          curl -fsSL --max-time 30 "https://biquote.io/api/XAUUSD?allowStale=true" -o /tmp/xauusd-quote.json
-          python - <<'PY'
-          import json
-          q = json.load(open("/tmp/xauusd-quote.json", encoding="utf-8"))
-          if q.get("symbol") != "XAUUSD" or not isinstance(q.get("mid"), (int, float)):
-              raise SystemExit(f"Unexpected quote response: {q}")
-          print(f"PASS: XAUUSD quote received; mid={q['mid']}; state={q.get('marketState')}")
-          PY
