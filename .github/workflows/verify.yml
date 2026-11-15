@@ -79,20 +79,31 @@ jobs:
           const browser = await chromium.launch({ headless: true });
           const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
           const errors = [];
-          page.on('pageerror', error => errors.push(error.message));
+          const failedRequests = [];
+          page.on('pageerror', error => errors.push('PAGE: ' + error.message));
+          page.on('console', msg => { if (msg.type() === 'error') errors.push('CONSOLE: ' + msg.text()); });
+          page.on('requestfailed', req => failedRequests.push(req.url() + ' :: ' + req.failure()?.errorText));
           await page.goto('http://127.0.0.1:8000/index.html', { waitUntil: 'domcontentloaded' });
-          await page.waitForFunction(() => {
-            const text = document.getElementById('barCount')?.textContent || '';
-            return text.includes('nến') && !text.startsWith('Lỗi');
-          }, { timeout: 60000 });
+          try {
+            await page.waitForFunction(() => {
+              const text = document.getElementById('barCount')?.textContent || '';
+              return text.includes('dữ liệu API') || text.startsWith('Lỗi dữ liệu');
+            }, { timeout: 25000 });
+          } catch {}
           const canvasCount = await page.locator('#chart canvas').count();
-          const messageVisible = await page.locator('#chartMessage').count();
+          const overlayCount = await page.locator('#chartMessage').count();
           const bars = await page.locator('#barCount').innerText();
           const status = await page.locator('#connectionText').innerText();
+          console.log('DIAGNOSTIC barCount=' + bars);
+          console.log('DIAGNOSTIC connection=' + status);
+          console.log('DIAGNOSTIC canvases=' + canvasCount + ', overlay=' + overlayCount);
+          console.log('DIAGNOSTIC page errors=' + JSON.stringify(errors));
+          console.log('DIAGNOSTIC failed requests=' + JSON.stringify(failedRequests));
+          if (!bars.includes('dữ liệu API')) throw new Error('No candles loaded: ' + bars);
           if (canvasCount < 1) throw new Error('Chart canvas was not created');
-          if (messageVisible !== 0) throw new Error('Chart startup overlay was not removed');
-          if (errors.length) throw new Error('Browser JavaScript errors: ' + errors.join('; '));
-          console.log('PASS: Chromium rendered chart; ' + bars + '; ' + status + '; canvas=' + canvasCount);
+          if (overlayCount !== 0) throw new Error('Chart startup overlay was not removed');
+          if (errors.length) throw new Error('Browser errors: ' + errors.join('; '));
+          console.log('PASS: Chromium rendered chart with live API candles.');
           await browser.close();
           JS
       - name: Check latest XAUUSD quote API
