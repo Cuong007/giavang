@@ -133,6 +133,11 @@ jobs:
           await page.locator('#addIndicatorBtn').click();
           await page.waitForFunction(() => (document.getElementById('indicatorStatus')?.textContent || '').includes('Đã nạp SMA 20'));
           if (await page.locator('.indicator-chip').count() !== 1) throw new Error('SMA 20 JavaScript indicator did not register');
+          // Confirm the loader also accepts pasted object expressions ending in a semicolon.
+          await page.locator('#indicatorCode').evaluate(el => { el.value = el.value.trim() + ';'; });
+          await page.locator('#addIndicatorBtn').click();
+          await page.waitForFunction(() => document.querySelectorAll('.indicator-chip').length === 2);
+          if (!(await page.locator('#indicatorStatus').innerText()).includes('Đã nạp SMA 20')) throw new Error('Trailing-semicolon JavaScript indicator failed');
           if (overlayCount !== 0) throw new Error('Chart startup overlay was not removed');
           if (errors.length) throw new Error('Browser errors: ' + errors.join('; '));
           console.log('PASS: Chromium rendered chart with 6000 cached M1 candles and loaded the SMA 20 JavaScript indicator.');
