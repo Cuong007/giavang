@@ -3,7 +3,12 @@ name: Verify Gold Analyzer
 on:
   push:
     branches: [main]
-    paths-ignore: ['.ci-diagnostics.txt']
+    paths:
+      - 'index.html'
+      - 'scripts/update-history.py'
+      - 'README.md'
+      - '.github/workflows/verify.yml'
+      - '.github/workflows/android.yml'
   workflow_dispatch:
 
 permissions:
