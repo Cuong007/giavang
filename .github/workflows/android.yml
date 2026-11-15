@@ -35,6 +35,9 @@ jobs:
       - name: Install Capacitor
         run: npm install
 
+      - name: Install Dukascopy client
+        run: npm install --no-save dukascopy-node
+
       - name: Generate single-source Dukascopy data
         run: node scripts/update-dukascopy.mjs
 
