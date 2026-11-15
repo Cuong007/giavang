@@ -84,7 +84,41 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   "use strict";
   const API = "https://biquote.io/api";
   const chartEl = document.getElementById("chart");
-  if (!window.LightweightCharts) { const m=el("chartMessage"); if(m) m.textContent="Không tải được thư viện biểu đồ. Hãy kiểm tra Internet hoặc thử mở bằng Chrome."; setStatus("Không tải được thư viện biểu đồ",false); el("chartStatus").textContent="Lỗi thư viện biểu đồ"; return; }
+
+  // Bắt lỗi ngay từ đầu: không gọi el()/setStatus() trước khi chúng được khai báo.
+  window.addEventListener("error", function (event) {
+    const message = event && event.message ? event.message : "Lỗi JavaScript không xác định";
+    const overlay = document.getElementById("chartMessage");
+    const status = document.getElementById("connectionText");
+    const chartStatus = document.getElementById("chartStatus");
+    const barCount = document.getElementById("barCount");
+    if (overlay) overlay.textContent = "Lỗi khởi tạo: " + message;
+    if (status) status.textContent = "Lỗi ứng dụng: " + message;
+    if (chartStatus) chartStatus.textContent = "Không khởi tạo được biểu đồ";
+    if (barCount) barCount.textContent = "Kiểm tra kết nối thư viện và tải lại trang";
+  });
+
+  if (!window.LightweightCharts || !window.LightweightCharts.CandlestickSeries) {
+    const overlay = document.getElementById("chartMessage");
+    const status = document.getElementById("connectionText");
+    const chartStatus = document.getElementById("chartStatus");
+    const barCount = document.getElementById("barCount");
+    const message = "Không tải được thư viện biểu đồ từ CDN (unpkg/jsDelivr).";
+    if (overlay) overlay.textContent = message + " Hãy kiểm tra Internet hoặc mở bằng Chrome.";
+    if (status) status.textContent = message;
+    if (chartStatus) chartStatus.textContent = "Lỗi thư viện biểu đồ";
+    if (barCount) barCount.textContent = "Thư viện biểu đồ chưa tải";
+    console.error(message);
+    return;
+  }
+
+  if (!chartEl || chartEl.clientWidth === 0 || chartEl.clientHeight === 0) {
+    const overlay = document.getElementById("chartMessage");
+    if (overlay) overlay.textContent = "Vùng biểu đồ chưa có kích thước hiển thị.";
+    console.error("Chart container has zero size");
+    return;
+  }
+
   const chart = LightweightCharts.createChart(chartEl, {
     width: chartEl.clientWidth, height: chartEl.clientHeight,
     layout: { background: { type: "solid", color: "#111821" }, textColor: "#8292a5", fontFamily: "Inter, system-ui, sans-serif" },
@@ -259,16 +293,5 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
 
 </script>
 
-<script>
-window.addEventListener('error', function(e) {
-  const msg = e && e.message ? e.message : 'Lỗi JavaScript không xác định';
-  const status = document.getElementById('connectionText');
-  const chartStatus = document.getElementById('chartStatus');
-  const message = document.getElementById('chartMessage');
-  if (status) status.textContent = 'Lỗi ứng dụng: ' + msg;
-  if (chartStatus) chartStatus.textContent = 'Không khởi tạo được biểu đồ';
-  if (message) message.textContent = 'Không khởi tạo được biểu đồ: ' + msg + '. Hãy kiểm tra kết nối Internet và tải lại trang.';
-});
-</script>
 </body>
 </html>
