@@ -233,6 +233,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   }
   let oandaAccountId="", oandaToken="", oandaEnvironment="practice", streamController=null, streamTask=null;
   function oandaBase(){return oandaEnvironment==="live"?"https://api-fxtrade.oanda.com":"https://api-fxpractice.oanda.com";}
+  function oandaStreamBase(){return oandaEnvironment==="live"?"https://stream-fxtrade.oanda.com":"https://stream-fxpractice.oanda.com";}
   function openOandaSettings(){
     const account=window.prompt("Nhập OANDA Account ID:",oandaAccountId); if(account===null)return;
     const token=window.prompt("Nhập OANDA Personal Access Token. Không gửi token cho người khác:", ""); if(token===null)return;
@@ -271,7 +272,8 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     streamController=new AbortController();const controller=streamController;
     streamTask=(async()=>{
       try{
-        const response=await oandaFetch("/v3/accounts/"+encodeURIComponent(oandaAccountId)+"/pricing/stream?instruments=XAU_USD",controller.signal);
+        const response=await fetch(oandaStreamBase()+"/v3/accounts/"+encodeURIComponent(oandaAccountId)+"/pricing/stream?instruments=XAU_USD",{headers:{"Authorization":"Bearer "+oandaToken,"Accept":"application/octet-stream"},cache:"no-store",signal:controller.signal});
+        if(!response.ok)throw new Error("OANDA stream HTTP "+response.status);
         if(!response.body||!response.body.getReader)throw new Error("Thiết bị không hỗ trợ đọc OANDA stream.");
         setStatus("Đã kết nối OANDA · chờ tick",true);
         const reader=response.body.getReader(),decoder=new TextDecoder();let buffer="";
