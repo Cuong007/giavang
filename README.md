@@ -1,23 +1,21 @@
 # Gold Analyzer — Web V2
 
-## Chạy thử
-Mở `index.html` bằng Chrome/Edge khi có Internet. Thư viện biểu đồ và SignalR được tải từ CDN.
+## Chạy thử và kết nối OANDA
+1. Mở ứng dụng, nhấn OANDA API ở góc trên.
+2. Nhập Account ID và Personal Access Token của tài khoản OANDA v20.
+3. Chọn OK cho tài khoản Practice/Demo; chọn Cancel cho tài khoản Live.
+4. Ứng dụng tải tối đa 5.000 nến XAU_USD khung M1 bằng OANDA REST và sau đó mở Pricing Stream để cập nhật giá BID liên tục.
+5. Các khung 3m, 5m, 15m, 30m, 1H, 4H, 1D được tổng hợp từ M1.
 
-## Tính năng
-- Giữ giao diện dark responsive của bản V1.
-- Biểu đồ nến XAU/USD lấy OHLC từ API.
-- Khung 1m, 3m, 5m, 15m, 30m, 1H, 4H, 1D. Khung 3m được tổng hợp từ nến 1m.
-- Giá mới nhất nhận qua SignalR hub; nếu SignalR không kết nối được thì tự chuyển sang REST polling.
-- Đồng bộ lại lịch sử nến mỗi 60 giây; hiển thị OHLC trên biểu đồ.
-- Công tắc âm thanh phát tiếng thử và cảnh báo khi giá dịch chuyển ít nhất 1 USD so với tick trước.
+Lưu ý bảo mật: Token được nhập trên thiết bị và chỉ giữ trong bộ nhớ phiên; đóng/mở lại ứng dụng sẽ cần nhập lại. Không gửi token qua chat, không commit vào GitHub và không chia sẻ APK có token. Nếu token bị lộ, hãy thu hồi trong OANDA Account Management. Ứng dụng kết nối trực tiếp tới OANDA; nếu OANDA chặn CORS trên WebView hoặc tài khoản không có XAU_USD, cần thêm backend proxy an toàn.
 
-## Nguồn và giới hạn dữ liệu
-- Nhà cung cấp: [biquote API](https://biquote.io/docs/), REST base `https://biquote.io/api`, SignalR `https://biquote.io/hubs/tick`.
-- Dữ liệu XAUUSD được mô tả là feed MetaTrader 5 (MT5), loại Forex/Metals/CFD. **Không phải dữ liệu hợp đồng ICE/CME hoặc giá giao dịch tập trung.**
-- API ghi rõ volume và last của nguồn FX/CFD có thể bằng 0; ứng dụng không diễn giải volume này là khối lượng giao dịch sàn.
-- Nguồn công khai không cần API key theo tài liệu tại thời điểm tích hợp; dịch vụ có thể thay đổi/gián đoạn.
-- Không dùng dữ liệu này làm căn cứ giao dịch nếu chưa đối chiếu với broker của bạn.
-
+## Nguồn dữ liệu và giới hạn
+- Nhà cung cấp duy nhất: OANDA v20, instrument XAU_USD, giá BID.
+- Lịch sử: endpoint candles với granularity=M1, count=5000, price=B.
+- Realtime: endpoint Pricing Stream; OANDA có thể gửi tối đa 4 thông điệp giá/giây/instrument, không phải toàn bộ tick exchange.
+- Đây là giá spot/CFD theo thanh khoản và nhóm giá của tài khoản OANDA, không phải giá hợp đồng vàng ICE/CME.
+- Tài khoản demo/practice miễn phí tùy khu vực và pháp nhân OANDA; cần xác minh tài khoản có instrument XAU_USD và quyền API v20.
+- Không có dữ liệu khi chưa cấu hình thông tin xác thực. Không hiển thị giá giả hoặc dùng cache nhà cung cấp khác làm dự phòng.
 ## Android APK
 - Dự án dùng Capacitor để đóng gói web app thành ứng dụng Android.
 - GitHub Actions workflow `Build Gold Analyzer Android APK` tự tạo APK debug và file ZIP mã nguồn mỗi khi cập nhật app hoặc chạy thủ công.
@@ -40,14 +38,6 @@ Mở `index.html` bằng Chrome/Edge khi có Internet. Thư viện biểu đồ 
 - **Mở** đưa mã đã lưu vào khung soạn thảo; **Xóa** xóa từng mã; **Xóa toàn bộ kho** xóa tất cả mã.
 - Kho lưu bằng localStorage trên thiết bị/trình duyệt hiện tại, không đồng bộ giữa thiết bị. Pine Script không tự chuyển thành JavaScript.
 - JavaScript đã kích hoạt có thể thực thi mã tùy ý trong ứng dụng. Chỉ kích hoạt mã từ nguồn đáng tin cậy.
-
-## Lịch sử 6.000 nến M1
-- GitHub Actions tự làm mới `data/xauusd-1m.json` mỗi 15 phút bằng workflow `Refresh XAUUSD 6000 M1 history`.
-- BiQuote hiện chỉ trả khoảng 301 nến M1 trong feed MT5, không hỗ trợ phân trang lịch sử sâu. Yahoo Finance `GC=F` (COMEX Gold Futures) trả trên 6.000 nến M1 trong cửa sổ 7 ngày.
-- Để giữ biểu đồ gần với XAUUSD spot, bộ tạo dữ liệu căn chỉnh lịch sử GC=F bằng chênh lệch trung vị so với các nến BiQuote XAUUSD MT5 trùng timestamp, rồi thay các nến trùng bằng nến spot MT5 thực tế.
-- Vì vậy 301 nến gần nhất là spot CFD MT5; phần lịch sử sâu là futures proxy đã căn chỉnh. Đây không phải 6.000 nến spot nguyên bản. Basis futures/spot có thể biến động; không dùng như dữ liệu khớp lệnh hoặc kiểm định cần độ chính xác tuyệt đối.
-- APK chứa bản cache tại thời điểm build. Web app đọc cache từ `data/xauusd-1m.json`; GitHub Actions cập nhật file định kỳ.
-
 
 ## Chart navigation, OHLC and fullscreen
 - OHLC panel follows the candle under the crosshair; when the crosshair leaves the plot it returns to the latest candle.
