@@ -1,6 +1,8 @@
 name: Verify Gold Analyzer
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
     paths:
