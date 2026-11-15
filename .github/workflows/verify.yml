@@ -168,7 +168,7 @@ jobs:
           await page.waitForFunction(() => (document.getElementById('fullscreenBtn')?.textContent || '').includes('Thu lại'));
           await fullscreen.click();
           await page.waitForFunction(() => (document.getElementById('fullscreenBtn')?.textContent || '').includes('Toàn màn hình'));
-          const appScript = await (await fetch('http://127.0.0.1:8000/index.html')).text();
+          const appScript = await page.locator('script').last().textContent();
           if (!appScript.includes('chart.subscribeCrosshairMove') || !appScript.includes('seriesData.get(candles)')) throw new Error('Crosshair OHLC handler missing');
           if (!appScript.includes('setVisibleRange(previousVisibleRange)')) throw new Error('Chart viewport is not preserved on data refresh');
           // Exercise the user's VN30 PRO-style API contract: init({chart,series,container}), update(candles,rawCandles,tf).
