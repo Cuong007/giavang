@@ -372,13 +372,22 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     catch (error) { console.warn("Cannot save indicators:", error); }
   }
   function addIndicatorCode(code, persist = true) {
-    const factory = new Function("ctx", '"use strict"; return (' + code + ');');
+    // Chấp nhận mã object có hoặc không có dấu chấm phẩy ở cuối.
+    // Ví dụ: ({ name: "SMA", create(ctx) { ... } }); hoặc ({ ... })
+    code = String(code || "").trim().replace(/;+\\s*$/, "");
+    if (!code) throw new Error("Bạn chưa dán mã JavaScript.");
+    let factory;
+    try {
+      factory = new Function("ctx", '"use strict"; return (\\n' + code + '\\n);');
+    } catch (syntaxError) {
+      throw new Error("Cú pháp JS không hợp lệ: " + syntaxError.message + ". Hãy dán một object indicator có name và create(ctx), không phải mã Pine Script.");
+    }
     const definition = factory({
       chart, LWC: LightweightCharts, candles,
       getBars: () => bars.slice()
     });
     if (!definition || typeof definition.create !== "function") {
-      throw new Error("Mã JS phải trả về object có hàm create(ctx).");
+      throw new Error("Mã JS phải trả về object có hàm create(ctx). Ví dụ: ({ name: 'SMA', create(ctx) { ... } }).");
     }
     const name = String(definition.name || "Indicator " + (activeIndicators.length + 1));
     const instance = definition.create({
