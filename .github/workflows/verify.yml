@@ -66,6 +66,35 @@ jobs:
               raise SystemExit(f"OHLC bar missing fields: {bars[0]}")
           print(f"PASS: {len(bars)} XAUUSD 1m bars received; latest close={bars[0]['close']}")
           PY
+      - name: Install headless browser
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Test real chart rendering in Chromium
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 >/tmp/gold-server.log 2>&1 &
+          sleep 2
+          node --input-type=module <<'JS'
+          import { chromium } from 'playwright';
+          const browser = await chromium.launch({ headless: true });
+          const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+          const errors = [];
+          page.on('pageerror', error => errors.push(error.message));
+          await page.goto('http://127.0.0.1:8000/index.html', { waitUntil: 'domcontentloaded' });
+          await page.waitForFunction(() => {
+            const text = document.getElementById('barCount')?.textContent || '';
+            return text.includes('nến') && !text.startsWith('Lỗi');
+          }, { timeout: 60000 });
+          const canvasCount = await page.locator('#chart canvas').count();
+          const messageVisible = await page.locator('#chartMessage').count();
+          const bars = await page.locator('#barCount').innerText();
+          const status = await page.locator('#connectionText').innerText();
+          if (canvasCount < 1) throw new Error('Chart canvas was not created');
+          if (messageVisible !== 0) throw new Error('Chart startup overlay was not removed');
+          if (errors.length) throw new Error('Browser JavaScript errors: ' + errors.join('; '));
+          console.log('PASS: Chromium rendered chart; ' + bars + '; ' + status + '; canvas=' + canvasCount);
+          await browser.close();
+          JS
       - name: Check latest XAUUSD quote API
         run: |
           curl -fsSL --max-time 30 "https://biquote.io/api/XAUUSD?allowStale=true" -o /tmp/xauusd-quote.json
