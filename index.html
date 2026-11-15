@@ -364,10 +364,29 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       }
     };
   }
+  function isLegacyChartIndicator(api) {
+    return Boolean(api && api.config && typeof api.update === "function" && api.update.length >= 2);
+  }
+  function legacyIndicatorInput() {
+    return { candles: bars.map(b => ({...b})), raw: rawBars.map(b => ({...b})), timeframe: current };
+  }
+  function cleanupLegacyIndicator(api, addedTopbarNodes) {
+    try {
+      if (api && api._S) {
+        if (api._S.canvas && api._S.canvas.parentNode) api._S.canvas.parentNode.removeChild(api._S.canvas);
+        api._S.ctx = null;
+        api._S.chart = null;
+        api._S.container = null;
+        api._S.canvas = null;
+      }
+    } catch (_) {}
+    for (const node of addedTopbarNodes || []) { try { node.remove(); } catch (_) {} }
+  }
   function deactivateIndicator(id, quiet) {
     const running = runningIndicators.get(id);
     if (running) {
       try { if (running.api && typeof running.api.reset === "function") running.api.reset(); } catch (error) { console.warn("Indicator reset error:", error); }
+      if (running.legacy) cleanupLegacyIndicator(running.api, running.addedTopbarNodes);
       for (const series of running.series) {
         try { chart.removeSeries(series); } catch (_) {}
       }
@@ -385,14 +404,26 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     try {
       // Script chỉ được thực thi ở thao tác kích hoạt rõ ràng của người dùng
       // (hoặc khôi phục trạng thái đã kích hoạt sau khi tải lại ứng dụng).
+      const topbar = document.querySelector(".topbar");
+      const topbarBefore = new Set(topbar ? [...topbar.children] : []);
       const execute = new Function("window", "LightweightCharts", item.code);
       execute(window, window.LightweightCharts);
       const api = findIndicatorApi(item);
+      const legacy = isLegacyChartIndicator(api);
       const context = makeIndicatorContext(item, series);
-      if (typeof api.init === "function") api.init(context);
-      runningIndicators.set(item.id, { api, context, series });
+      if (typeof api.init === "function") {
+        if (legacy) api.init({ chart, series: candles, container: chartEl, rightOffset: 25 });
+        else api.init(context);
+      }
+      const addedTopbarNodes = topbar ? [...topbar.children].filter(node => !topbarBefore.has(node)) : [];
+      runningIndicators.set(item.id, { api, context, series, legacy, addedTopbarNodes });
       if (typeof api.update === "function") {
-        for (const bar of bars) api.update({...bar});
+        if (legacy) {
+          const input = legacyIndicatorInput();
+          api.update(input.candles, input.raw, input.timeframe);
+        } else {
+          for (const bar of bars) api.update({...bar});
+        }
       }
       item.active = true;
       saveIndicatorStore();
@@ -415,8 +446,13 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       try {
         if (replay && typeof running.api.reset === "function") running.api.reset();
         if (typeof running.api.update === "function") {
-          const feed = replay ? bars : bars.slice(-1);
-          for (const bar of feed) running.api.update({...bar});
+          if (running.legacy) {
+            const input = legacyIndicatorInput();
+            running.api.update(input.candles, input.raw, input.timeframe);
+          } else {
+            const feed = replay ? bars : bars.slice(-1);
+            for (const bar of feed) running.api.update({...bar});
+          }
         }
       } catch (error) {
         console.error("Indicator update error:", item.name, error);
