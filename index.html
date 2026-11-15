@@ -72,7 +72,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   </div>
   <aside class="side-card">
    <div class="side-title">Bảng điều khiển</div>
-   <div class="feed-item"><div class="feed-label">NGUỒN DỮ LIỆU</div><div class="feed-value">biquote · MT5</div></div>
+   <div class="feed-item"><div class="feed-label">NGUỒN DỮ LIỆU</div><div class="feed-value">MT5 XAUUSD + GC=F lịch sử căn chỉnh</div></div>
    <div class="feed-item"><div class="feed-label">TRẠNG THÁI BIỂU ĐỒ</div><div class="feed-value up" id="chartStatus">Đang khởi tạo biểu đồ…</div></div>
    <div class="feed-item indicator-feed">
     <div class="feed-label">INDICATOR · JAVASCRIPT</div>
@@ -105,7 +105,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
    <div class="sound-row"><div><div class="feed-value">Âm thanh cảnh báo</div><div class="feed-label">Bật để nhận cảnh báo tín hiệu</div></div><button class="switch" id="soundSwitch" aria-label="Bật tắt âm thanh"></button></div>
   </aside>
  </section>
- <div class="notice"><span>ⓘ</span><div><b>Lưu ý:</b> Dữ liệu XAUUSD từ feed MT5/CFD bên thứ ba. Không phải giá hợp đồng ICE/CME. Dữ liệu ngoại hối/CFD không có volume giao dịch tập trung.</div></div>
+ <div class="notice"><span>ⓘ</span><div><b>Lưu ý dữ liệu:</b> 301 nến gần nhất lấy từ XAUUSD MT5/CFD. Phần lịch sử sâu dùng GC=F (hợp đồng vàng COMEX) đã căn chỉnh bằng chênh lệch trung vị so với 301 nến spot trùng thời gian. Đây là dữ liệu proxy, không phải 6.000 nến spot nguyên bản; giá futures và spot có thể khác nhau. Không có volume giao dịch tập trung cho CFD.</div></div>
  <div class="bottom">GOLD ANALYZER · WEB BUILD V2 · LIVE DATA</div>
 </main>
 </div>
@@ -215,27 +215,63 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     }
     return [...map.values()];
   }
+  async function loadCachedM1History() {
+    const urls = [
+      "./data/xauusd-1m.json",
+      "https://raw.githubusercontent.com/Cuong007/giavang/main/data/xauusd-1m.json"
+    ];
+    const errors = [];
+    for (const url of urls) {
+      try {
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const json = await response.json();
+        if (!Array.isArray(json.bars) || json.bars.length < 6000) {
+          throw new Error("Cache chỉ có " + (json.bars?.length || 0) + " nến");
+        }
+        return json;
+      } catch (error) { errors.push(url + ": " + error.message); }
+    }
+    throw new Error("Không tải được cache 6.000 nến M1. " + errors.join(" | "));
+  }
   async function loadCandles() {
     if (busy) return;
     busy = true;
     try {
-      const sourceTf = current === "3m" ? "1m" : apiIntervals[current];
-      const requestedLimit = current === "1m" ? 6000 : 1000;
-      const url = `${API}/XAUUSD/ohlc?interval=${sourceTf}&limit=${requestedLimit}`;
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) throw new Error("OHLC HTTP " + response.status);
-      const json = await response.json();
-      if (!Array.isArray(json.bars) || !json.bars.length) throw new Error("API chưa trả về nến XAUUSD");
-      let data = toBars(json.bars);
-      if (current === "3m") data = aggregate3m(data);
+      let data, historyMeta = null, countLabel = "";
+      if (current === "1m" || current === "3m") {
+        const history = await loadCachedM1History();
+        historyMeta = history;
+        data = toBars(history.bars);
+        if (current === "3m") data = aggregate3m(data);
+        countLabel = current === "1m"
+          ? data.length + " nến · 6.000 M1 (GC=F căn chỉnh spot)"
+          : data.length + " nến · tổng hợp từ 6.000 M1";
+      } else {
+        const sourceTf = apiIntervals[current];
+        const url = `${API}/XAUUSD/ohlc?interval=${sourceTf}&limit=1000`;
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) throw new Error("OHLC HTTP " + response.status);
+        const json = await response.json();
+        if (!Array.isArray(json.bars) || !json.bars.length) throw new Error("API chưa trả về nến XAUUSD");
+        data = toBars(json.bars);
+        countLabel = data.length + " nến · dữ liệu MT5 API";
+      }
+      if (!data.length) throw new Error("Không có nến hợp lệ");
       bars = data;
       candles.setData(data.map(({time,open,high,low,close}) => ({time,open,high,low,close})));
       refreshIndicators();
       chart.timeScale().fitContent();
       el("chartTfLabel").textContent = "· " + tfNames[current];
-      el("barCount").textContent = data.length + " nến · dữ liệu API";
+      el("barCount").textContent = countLabel;
+      if (historyMeta && current === "1m") {
+        el("chartStatus").textContent = "Đã tải 6.000 nến M1 · lịch sử futures căn chỉnh spot";
+        setStatus("Đã nhận 6.000 nến M1 · dữ liệu lịch sử đã căn chỉnh", true);
+      } else {
+        el("chartStatus").textContent = "Đã tải dữ liệu biểu đồ";
+        setStatus("Đã nhận dữ liệu XAUUSD", true);
+      }
       updateBar(data[data.length - 1]);
-      setStatus("Đã nhận dữ liệu XAUUSD", true);
     } catch (err) {
       setStatus("Lỗi tải nến: " + err.message, false);
       el("chartStatus").textContent = "Không tải được dữ liệu nến";
