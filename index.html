@@ -58,7 +58,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
 <div class="app">
 <header class="topbar">
  <div class="brand"><div class="logo">G</div><div>GOLD ANALYZER<small>MARKET DESK</small></div></div>
- <div class="top-right"><div class="market-status"><i class="dot"></i><span id="connectionText">Đang kết nối dữ liệu</span></div><span class="demo-tag">LIVE FEED</span></div>
+ <div class="top-right"><div class="market-status"><i class="dot"></i><span id="connectionText">Chưa cấu hình OANDA</span></div><button class="tool-btn" id="oandaSettingsBtn">⚙ OANDA API</button><span class="demo-tag">OANDA</span></div>
 </header>
 <main>
  <section class="instrument">
@@ -86,7 +86,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   </div>
   <aside class="side-card">
    <div class="side-title">Bảng điều khiển</div>
-   <div class="feed-item"><div class="feed-label">NGUỒN DỮ LIỆU</div><div class="feed-value">Dukascopy · XAUUSD BID</div></div>
+   <div class="feed-item"><div class="feed-label">NGUỒN DỮ LIỆU</div><div class="feed-value">OANDA v20 · XAU_USD BID</div></div>
    <div class="feed-item"><div class="feed-label">TRẠNG THÁI BIỂU ĐỒ</div><div class="feed-value up" id="chartStatus">Đang khởi tạo biểu đồ…</div></div>
    <div class="feed-item indicator-feed">
     <div class="feed-label">INDICATOR · JAVASCRIPT</div>
@@ -107,7 +107,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
    </div>
   </aside>
  </section>
- <div class="notice"><span>ⓘ</span><div><b>Nguồn dữ liệu:</b> XAUUSD BID từ Dukascopy. Không ghép dữ liệu từ nhà cung cấp khác. Realtime chỉ được xác nhận khi nhận được tick mới.</div></div>
+ <div class="notice"><span>ⓘ</span><div><b>Nguồn dữ liệu:</b> OANDA v20 XAU_USD BID. Lịch sử tối đa 5.000 nến M1; realtime qua Pricing Stream. Cần tài khoản OANDA và API token. Token chỉ giữ trong bộ nhớ phiên, không nhúng vào APK.</div></div>
  <div class="bottom">GOLD ANALYZER · WEB BUILD V2 · LIVE DATA</div>
 </main>
 </div>
@@ -225,73 +225,75 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     }
     return [...map.values()];
   }
-  function toDukBars(raw) {
-    return (raw || []).map(b => ({
-      time: Math.floor(Number(b.timestamp) / 1000),
-      open: Number(b.open), high: Number(b.high), low: Number(b.low), close: Number(b.close),
-      volume: Number(b.volume || 0), isOpen: false
-    })).filter(b => Number.isFinite(b.time) && [b.open,b.high,b.low,b.close].every(Number.isFinite)).sort((a,b)=>a.time-b.time);
+  function toOandaBars(raw) {
+    return (raw || []).map(b => {
+      const p = b.bid || b.mid || b.ask;
+      return { time:Math.floor(Date.parse(b.time)/1000), open:Number(p&&p.o), high:Number(p&&p.h), low:Number(p&&p.l), close:Number(p&&p.c), volume:Number(b.volume||0), isOpen:!b.complete };
+    }).filter(b=>Number.isFinite(b.time)&&[b.open,b.high,b.low,b.close].every(Number.isFinite)).sort((a,b)=>a.time-b.time);
   }
-  async function loadCachedM1History() {
-    const urls = [
-      "https://raw.githubusercontent.com/Cuong007/giavang/main/data/dukascopy-xauusd.json?v=" + Date.now(),
-      "./data/dukascopy-xauusd.json"
-    ];
-    const errors = [];
-    for (const url of urls) {
-      try {
-        const response = await fetch(url, { cache: "no-store" });
-        if (!response.ok) throw new Error("HTTP " + response.status);
-        const json = await response.json();
-        if (json.provider !== "Dukascopy" || !Array.isArray(json.timeframes?.m1) || json.timeframes.m1.length < 6000) {
-          throw new Error("Cache Dukascopy không hợp lệ hoặc thiếu 6.000 nến M1");
+  let oandaAccountId="", oandaToken="", oandaEnvironment="practice", streamController=null, streamTask=null;
+  function oandaBase(){return oandaEnvironment==="live"?"https://api-fxtrade.oanda.com":"https://api-fxpractice.oanda.com";}
+  function openOandaSettings(){
+    const account=window.prompt("Nhập OANDA Account ID:",oandaAccountId); if(account===null)return;
+    const token=window.prompt("Nhập OANDA Personal Access Token. Không gửi token cho người khác:", ""); if(token===null)return;
+    const practice=window.confirm("OK = tài khoản PRACTICE/DEMO. Cancel = tài khoản LIVE.");
+    oandaAccountId=account.trim();oandaToken=token.trim();oandaEnvironment=practice?"practice":"live";
+    if(!oandaAccountId||!oandaToken){setStatus("Thiếu Account ID hoặc API token",false);return;}
+    if(streamController)streamController.abort();streamController=null;
+    loadCandles().then(()=>{storedIndicators.filter(x=>x.active).forEach(item=>activateIndicator(item,true));});
+  }
+  async function oandaFetch(path,signal){
+    if(!oandaAccountId||!oandaToken)throw new Error("Nhấn OANDA API và nhập Account ID + token.");
+    const response=await fetch(oandaBase()+path,{headers:{"Authorization":"Bearer "+oandaToken,"Accept":"application/json"},cache:"no-store",signal});
+    if(!response.ok){let detail="";try{detail=(await response.json()).errorMessage||"";}catch(_){}throw new Error("OANDA HTTP "+response.status+(detail?": "+detail:""));}
+    return response;
+  }
+  async function loadCandles(){
+    if(busy)return;
+    if(!oandaAccountId||!oandaToken){setStatus("Chưa cấu hình OANDA",false);el("chartStatus").textContent="Nhập Account ID và API token để tải dữ liệu.";el("barCount").textContent="Chưa có dữ liệu · cần kết nối OANDA";return;}
+    busy=true;
+    try{
+      const response=await oandaFetch("/v3/accounts/"+encodeURIComponent(oandaAccountId)+"/instruments/XAU_USD/candles?granularity=M1&count=5000&price=B",null);
+      const json=await response.json();
+      if(!Array.isArray(json.candles)||!json.candles.length)throw new Error("OANDA không trả về nến XAU_USD. Kiểm tra instrument và quyền tài khoản.");
+      const historyM1=toOandaBars(json.candles);if(!historyM1.length)throw new Error("Dữ liệu nến OANDA không hợp lệ.");
+      rawBars=historyM1;const data=current==="1m"?historyM1:aggregateBars(historyM1,tfSeconds[current]);if(!data.length)throw new Error("Không có nến hợp lệ.");
+      const previousVisibleRange=chartHasInitialData?chart.timeScale().getVisibleRange():null;
+      bars=data;candles.setData(data.map(({time,open,high,low,close})=>({time,open,high,low,close})));
+      if(previousVisibleRange){try{chart.timeScale().setVisibleRange(previousVisibleRange);}catch(_){}}else{chart.timeScale().fitContent();chartHasInitialData=true;}
+      el("chartTfLabel").textContent="· "+tfNames[current];el("barCount").textContent=data.length+" nến · OANDA BID"+(current==="1m"?" · tối đa 5.000 M1":"");
+      el("chartStatus").textContent="OANDA v20 · XAU_USD · "+oandaEnvironment.toUpperCase();updateBar(data[data.length-1]);refreshActiveIndicators(true);startOandaStream();
+    }catch(err){setStatus("OANDA: "+err.message,false);el("chartStatus").textContent="Không tải được dữ liệu OANDA";el("barCount").textContent="Lỗi kết nối: "+err.message;console.error("OANDA history error:",err);}
+    finally{busy=false;}
+  }
+  async function startOandaStream(){
+    if(streamController||!oandaAccountId||!oandaToken)return;
+    streamController=new AbortController();const controller=streamController;
+    streamTask=(async()=>{
+      try{
+        const response=await oandaFetch("/v3/accounts/"+encodeURIComponent(oandaAccountId)+"/pricing/stream?instruments=XAU_USD",controller.signal);
+        if(!response.body||!response.body.getReader)throw new Error("Thiết bị không hỗ trợ đọc OANDA stream.");
+        setStatus("Đã kết nối OANDA · chờ tick",true);
+        const reader=response.body.getReader(),decoder=new TextDecoder();let buffer="";
+        while(true){
+          const part=await reader.read();if(part.done)break;buffer+=decoder.decode(part.value,{stream:true});
+          const lines=buffer.split("\n");buffer=lines.pop()||"";
+          for(const line of lines){if(!line.trim())continue;let message;try{message=JSON.parse(line);}catch(_){continue;}
+            if(message.type==="PRICE"&&message.instrument==="XAU_USD"){
+              const bid=Number(message.bids&&message.bids[0]&&message.bids[0].price),ask=Number(message.asks&&message.asks[0]&&message.asks[0].price);if(!Number.isFinite(bid))continue;
+              const stamp=message.time||new Date().toISOString();patchQuote(bid,stamp);const age=Math.max(0,Math.round((Date.now()-Date.parse(stamp))/1000));
+              setStatus("OANDA LIVE · BID · "+age+"s",age<=30);el("chartStatus").textContent="OANDA Pricing Stream · XAU_USD BID";el("lastPrice").textContent=fmt(bid);
+              if(Number.isFinite(ask))el("sPrev").textContent="Ask "+fmt(ask);if(soundEnabled&&lastAlertPrice!==null&&Math.abs(bid-lastAlertPrice)>=1)beep();lastAlertPrice=bid;
+            }else if(message.type==="HEARTBEAT"){setStatus("OANDA stream · heartbeat",true);}else if(message.type==="ERROR"){throw new Error(message.errorMessage||"OANDA stream error");}
+          }
         }
-        return json;
-      } catch (error) { errors.push(url + ": " + error.message); }
-    }
-    throw new Error("Không tải được dữ liệu Dukascopy. " + errors.join(" | "));
+        if(!controller.signal.aborted)throw new Error("OANDA stream đã đóng.");
+      }catch(error){
+        if(!controller.signal.aborted){setStatus("Mất OANDA stream: "+error.message,false);console.error("OANDA stream error:",error);streamController=null;setTimeout(()=>{if(!document.hidden&&oandaToken)startOandaStream();},5000);}
+      }finally{if(controller.signal.aborted&&streamController===controller)streamController=null;}
+    })();
   }
-  async function loadCandles() {
-    if (busy) return;
-    busy = true;
-    try {
-      const history = await loadCachedM1History();
-      const timeframeKeys = { "1m":"m1", "5m":"m5", "15m":"m15", "30m":"m30", "1H":"h1", "4H":"h4", "1D":"d1" };
-      const historyM1 = toDukBars(history.timeframes.m1);
-      rawBars = historyM1;
-      let data;
-      if (current === "3m") data = aggregateBars(historyM1, 180);
-      else if (current === "1m") data = historyM1;
-      else {
-        const native = history.timeframes[timeframeKeys[current]];
-        data = Array.isArray(native) && native.length ? toDukBars(native) : aggregateBars(historyM1, tfSeconds[current]);
-      }
-      const countLabel = data.length + " nến · Dukascopy BID" + (current === "1m" ? " · tối thiểu 6.000 M1" : "");
-      if (!data.length) throw new Error("Không có nến hợp lệ");
-      const previousVisibleRange = chartHasInitialData ? chart.timeScale().getVisibleRange() : null;
-      bars = data;
-      candles.setData(data.map(({time,open,high,low,close}) => ({time,open,high,low,close})));
-      if (previousVisibleRange) {
-        try { chart.timeScale().setVisibleRange(previousVisibleRange); }
-        catch (_) { /* giữ vị trí người dùng khi cache được cập nhật */ }
-      } else {
-        chart.timeScale().fitContent();
-        chartHasInitialData = true;
-      }
-      el("chartTfLabel").textContent = "· " + tfNames[current];
-      el("barCount").textContent = countLabel;
-      el("chartStatus").textContent = "Dukascopy BID · cập nhật cache " + new Date(history.generatedAt).toLocaleString("vi-VN");
-      setStatus("Dukascopy · " + (history.quote?.isLive ? "LIVE" : "giá gần nhất; chờ thị trường mở"), Boolean(history.quote?.isLive));
-      updateBar(data[data.length - 1]);
-      if (history.quote) updateQuote(history.quote);
-      refreshActiveIndicators(true);
-    } catch (err) {
-      setStatus("Lỗi tải nến: " + err.message, false);
-      el("chartStatus").textContent = "Không tải được dữ liệu nến";
-      el("barCount").textContent = "Lỗi dữ liệu: " + err.message;
-      console.error("Gold Analyzer candle API error:", err);
-    } finally { busy = false; }
-  }
+  el("oandaSettingsBtn").addEventListener("click",openOandaSettings);
   function updateQuote(q) {
     const mid = Number(q.mid);
     if (!Number.isFinite(mid)) return;
@@ -303,9 +305,10 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     el("sLow").textContent = fmt(q.low);
     el("sOpen").textContent = Number.isFinite(Number(q.open)) ? fmt(q.open) : "—";
     el("sPrev").textContent = "—";
-    const ageSeconds = Number.isFinite(Number(q.timestamp)) ? Math.max(0, (Date.now() - Number(q.timestamp)) / 1000) : Infinity;
+    const parsedTime = typeof q.timestamp === "string" ? Date.parse(q.timestamp) : Number(q.timestamp);
+    const ageSeconds = Number.isFinite(parsedTime) ? Math.max(0, (Date.now() - parsedTime) / 1000) : Infinity;
     const live = Boolean(q.isLive) && ageSeconds <= 120;
-    setStatus(live ? "LIVE · Dukascopy BID · " + Math.round(ageSeconds) + "s" : "Dukascopy · giá gần nhất; chờ thị trường mở", live);
+    setStatus(live ? "LIVE · OANDA BID · " + Math.round(ageSeconds) + "s" : "OANDA · giá gần nhất", live);
     patchQuote(mid, q.timestamp);
     if (soundEnabled && lastAlertPrice !== null && Math.abs(mid - lastAlertPrice) >= 1) beep();
     lastAlertPrice = mid;
@@ -322,12 +325,6 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     candles.update({time:b.time,open:b.open,high:b.high,low:b.low,close:b.close});
     updateBar(b);
     refreshActiveIndicators(false);
-  }
-  async function fetchQuote() {
-    try {
-      const history = await loadCachedM1History();
-      if (history.quote) updateQuote(history.quote);
-    } catch(e) { setStatus("Không tải được dữ liệu Dukascopy: " + e.message, false); console.error(e); }
   }
   // Kho JS: chỉ chạy script khi người dùng chủ động bấm Kích hoạt.
   const indicatorStoreKey = "goldAnalyzerIndicatorScripts";
@@ -727,9 +724,9 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   renderAlertSettings();
   const ro=new ResizeObserver(entries=>{for(const entry of entries)chart.applyOptions({width:entry.contentRect.width,height:entry.contentRect.height});});
   ro.observe(chartEl);
+  el("chartStatus").textContent = "Chưa kết nối OANDA · nhấn OANDA API để cấu hình.";
   loadCandles().then(() => { storedIndicators.filter(x => x.active).forEach(item => activateIndicator(item, true)); });
-  setInterval(()=>{if(!document.hidden)loadCandles();},60000);
-  document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadCandles();});
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden&&oandaAccountId&&oandaToken&&!streamController)loadCandles();});
 })();
 
 </script>
