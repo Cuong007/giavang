@@ -36,4 +36,5 @@ jobs:
             exit 0
           fi
           git commit -m "Refresh XAUUSD data from Dukascopy"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
           git push
