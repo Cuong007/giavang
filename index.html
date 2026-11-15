@@ -372,13 +372,12 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     catch (error) { console.warn("Cannot save indicators:", error); }
   }
   function addIndicatorCode(code, persist = true) {
-    // Chấp nhận mã object có hoặc không có dấu chấm phẩy ở cuối.
-    // Ví dụ: ({ name: "SMA", create(ctx) { ... } }); hoặc ({ ... })
-    code = String(code || "").trim().replace(/;+\\s*$/, "");
+    // Chấp nhận object indicator có hoặc không có dấu chấm phẩy ở cuối.
+    code = String(code || "").trim().replace(/;\s*$/, "");
     if (!code) throw new Error("Bạn chưa dán mã JavaScript.");
     let factory;
     try {
-      factory = new Function("ctx", '"use strict"; return (\\n' + code + '\\n);');
+      factory = new Function("ctx", '"use strict"; return (\n' + code + '\n);');
     } catch (syntaxError) {
       throw new Error("Cú pháp JS không hợp lệ: " + syntaxError.message + ". Hãy dán một object indicator có name và create(ctx), không phải mã Pine Script.");
     }
