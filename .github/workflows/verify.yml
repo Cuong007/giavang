@@ -104,6 +104,15 @@ jobs:
               return text.includes('nến') || text.startsWith('Lỗi dữ liệu');
             }, { timeout: 25000 });
           } catch {}
+          const remoteHistory = await page.evaluate(async () => {
+            try {
+              const r = await fetch('https://raw.githubusercontent.com/Cuong007/giavang/main/data/xauusd-1m.json?ci=' + Date.now());
+              const j = await r.json();
+              return { ok: r.ok, count: j.bars?.length || 0 };
+            } catch (e) { return { ok: false, error: String(e) }; }
+          });
+          console.log('DIAGNOSTIC remote history=' + JSON.stringify(remoteHistory));
+          if (!remoteHistory.ok || remoteHistory.count < 6000) throw new Error('Remote 6000-bar cache unavailable: ' + JSON.stringify(remoteHistory));
           const canvasCount = await page.locator('#chart canvas').count();
           const overlayCount = await page.locator('#chartMessage').count();
           const bars = await page.locator('#barCount').innerText();
