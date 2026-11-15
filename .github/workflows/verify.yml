@@ -130,14 +130,19 @@ jobs:
           if (!bars.includes('nến')) throw new Error('No candles loaded: ' + bars);
           if (Number.parseInt(bars, 10) < 6000) throw new Error('Expected at least 6000 M1 candles, got: ' + bars);
           if (canvasCount < 1) throw new Error('Chart canvas was not created');
+          if (await page.locator('.indicator-chip').count() !== 0) throw new Error('There must be no default indicators in the storage');
+          // Full standalone IIFE script: syntax-check and store only; it must NOT execute.
+          const standalone = '/* fvg-indicator.js */\\n(function(root){ "use strict"; root.__fvgExecuted = true; root.FVGIndicator = { init(){}, update(){}, reset(){} }; })(window);';
+          await page.locator('#indicatorCode').fill(standalone);
           await page.locator('#addIndicatorBtn').click();
-          await page.waitForFunction(() => (document.getElementById('indicatorStatus')?.textContent || '').includes('Đã nạp SMA 20'));
-          if (await page.locator('.indicator-chip').count() !== 1) throw new Error('SMA 20 JavaScript indicator did not register');
-          // Confirm the loader also accepts pasted object expressions ending in a semicolon.
-          await page.locator('#indicatorCode').evaluate(el => { el.value = el.value.trim() + ';'; });
-          await page.locator('#addIndicatorBtn').click();
-          await page.waitForFunction(() => document.querySelectorAll('.indicator-chip').length === 2);
-          if (!(await page.locator('#indicatorStatus').innerText()).includes('Đã nạp SMA 20')) throw new Error('Trailing-semicolon JavaScript indicator failed');
+          await page.waitForFunction(() => (document.getElementById('indicatorStatus')?.textContent || '').includes('Đã lưu fvg-indicator.js'));
+          const stored = await page.evaluate(() => ({ count: JSON.parse(localStorage.getItem('goldAnalyzerIndicatorScripts') || '[]').length, executed: !!window.__fvgExecuted }));
+          if (stored.count !== 1 || stored.executed) throw new Error('Standalone script was not safely stored: ' + JSON.stringify(stored));
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          await page.waitForFunction(() => document.querySelectorAll('.indicator-chip').length === 1);
+          if (await page.evaluate(() => !!window.__fvgExecuted)) throw new Error('Stored indicator unexpectedly executed after reload');
+          await page.locator('.indicator-chip button').last().click();
+          if (await page.locator('.indicator-chip').count() !== 0) throw new Error('Stored indicator could not be removed');
           if (overlayCount !== 0) throw new Error('Chart startup overlay was not removed');
           if (errors.length) throw new Error('Browser errors: ' + errors.join('; '));
           console.log('PASS: Chromium rendered chart with 6000 cached M1 candles and loaded the SMA 20 JavaScript indicator.');
