@@ -40,7 +40,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
 <div class="app">
 <header class="topbar">
  <div class="brand"><div class="logo">G</div><div>GOLD ANALYZER<small>MARKET DESK</small></div></div>
- <div class="top-right"><div class="market-status"><i class="dot"></i><span id="connectionText">Đang dùng dữ liệu minh họa</span></div><span class="demo-tag">DEMO DATA</span></div>
+ <div class="top-right"><div class="market-status"><i class="dot"></i><span id="connectionText">Đang kết nối dữ liệu</span></div><span class="demo-tag">LIVE FEED</span></div>
 </header>
 <main>
  <section class="instrument">
@@ -64,80 +64,21 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
    </div>
    <div class="chart-meta"><span class="ohlc" id="ohlc">O 2,647.31　H 2,662.80　L 2,644.15　C 2,658.42</span><span class="up">● Tăng</span><span class="down">● Giảm</span></div>
    <div id="chart"></div>
-   <div class="chart-footer"><span>Biểu đồ nến · USD</span><span id="barCount">300 nến minh họa</span></div>
+   <div class="chart-footer"><span>Biểu đồ nến · USD</span><span id="barCount">Đang tải nến</span></div>
   </div>
   <aside class="side-card">
    <div class="side-title">Bảng điều khiển</div>
-   <div class="feed-item"><div class="feed-label">NGUỒN DỮ LIỆU</div><div class="feed-value">Chưa kết nối API</div></div>
-   <div class="feed-item"><div class="feed-label">TRẠNG THÁI BIỂU ĐỒ</div><div class="feed-value up">Đang hiển thị DEMO</div></div>
-   <div class="feed-item"><div class="feed-label">INDICATOR</div><div class="placeholder">Khu vực tích hợp Pine Script → JavaScript sẽ đặt tại đây. Chưa thêm indicator mặc định.</div></div>
-   <div class="sound-row"><div><div class="feed-value">Âm thanh cảnh báo</div><div class="feed-label">Bật khi tích hợp tín hiệu</div></div><button class="switch" id="soundSwitch" aria-label="Bật tắt âm thanh"></button></div>
+   <div class="feed-item"><div class="feed-label">NGUỒN DỮ LIỆU</div><div class="feed-value">biquote · MT5</div></div>
+   <div class="feed-item"><div class="feed-label">TRẠNG THÁI BIỂU ĐỒ</div><div class="feed-value up">Đang tải dữ liệu</div></div>
+   <div class="feed-item"><div class="feed-label">INDICATOR</div><div class="placeholder">Khu vực tích hợp Pine Script → JavaScript sẽ đặt tại đây. Indicator chưa được cấu hình.</div></div>
+   <div class="sound-row"><div><div class="feed-value">Âm thanh cảnh báo</div><div class="feed-label">Bật để nhận cảnh báo tín hiệu</div></div><button class="switch" id="soundSwitch" aria-label="Bật tắt âm thanh"></button></div>
   </aside>
  </section>
- <div class="notice"><span>ⓘ</span><div><b>Lưu ý:</b> Đây là bản giao diện thử nghiệm sử dụng dữ liệu giả lập để kiểm tra biểu đồ và bố cục. Chưa có giá realtime, chưa lưu lịch sử thị trường và chưa phát tín hiệu giao dịch.</div></div>
- <div class="bottom">GOLD ANALYZER · BẢN GIAO DIỆN V1</div>
+ <div class="notice"><span>ⓘ</span><div><b>Lưu ý:</b> Dữ liệu XAUUSD từ feed MT5/CFD bên thứ ba. Không phải giá hợp đồng ICE/CME. Dữ liệu ngoại hối/CFD không có volume giao dịch tập trung.</div></div>
+ <div class="bottom">GOLD ANALYZER · WEB BUILD V2 · LIVE DATA</div>
 </main>
 </div>
-<script>
-(function(){
- const el=document.getElementById('chart');
- const chart=LightweightCharts.createChart(el,{
-  width:el.clientWidth,height:el.clientHeight,
-  layout:{background:{type:'solid',color:'#111821'},textColor:'#8292a5',fontFamily:'Inter, system-ui, sans-serif'},
-  grid:{vertLines:{color:'#1d2935'},horzLines:{color:'#1d2935'}},
-  crosshair:{mode:LightweightCharts.CrosshairMode.Normal,vertLine:{color:'#7e8fa3',labelBackgroundColor:'#344354'},horzLine:{color:'#7e8fa3',labelBackgroundColor:'#344354'}},
-  rightPriceScale:{borderColor:'#293746',scaleMargins:{top:.12,bottom:.12}},
-  timeScale:{borderColor:'#293746',timeVisible:true,secondsVisible:false},
-  handleScroll:{mouseWheel:true,pressedMouseMove:true},handleScale:{mouseWheel:true,pinch:true}
- });
- const candles=chart.addSeries(LightweightCharts.CandlestickSeries,{
-  upColor:'#19b985',downColor:'#ed5c68',borderUpColor:'#19b985',borderDownColor:'#ed5c68',wickUpColor:'#19b985',wickDownColor:'#ed5c68'
- });
- const fmt=n=>Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
- const tfSeconds={'1m':60,'3m':180,'5m':300,'15m':900,'30m':1800,'1H':3600,'4H':14400,'1D':86400};
- const tfNames={'1m':'1 phút','3m':'3 phút','5m':'5 phút','15m':'15 phút','30m':'30 phút','1H':'1 giờ','4H':'4 giờ','1D':'1 ngày'};
- let current='1m',base=2658.42,data=[];
- function makeData(tf){
-  const step=tfSeconds[tf],now=Math.floor(Date.now()/1000/step)*step;
-  let p=2648 + (tf==='1D'? -8:0),out=[];
-  for(let i=299;i>=0;i--){
-   const wave=Math.sin(i*.105)*1.15+Math.sin(i*.031)*2.2;
-   const drift=(299-i)*.027;
-   let o=p,move=(Math.random()-.47)*2.2+Math.cos(i*.16)*.22;
-   let c=o+move,hi=Math.max(o,c)+Math.random()*1.15,lo=Math.min(o,c)-Math.random()*1.15;
-   out.push({time:now-i*step,open:+o.toFixed(2),high:+hi.toFixed(2),low:+lo.toFixed(2),close:+c.toFixed(2)});
-   p=c+wave*.018+drift*.002;
-  }
-  const shift=2658.42-out[out.length-1].close;
-  out=out.map(x=>({time:x.time,open:+(x.open+shift).toFixed(2),high:+(x.high+shift).toFixed(2),low:+(x.low+shift).toFixed(2),close:+(x.close+shift).toFixed(2)}));
-  return out;
- }
- function render(tf){
-  current=tf;data=makeData(tf);candles.setData(data);chart.timeScale().fitContent();
-  document.querySelectorAll('.tf').forEach(b=>b.classList.toggle('active',b.dataset.tf===tf));
-  document.getElementById('chartTfLabel').textContent='· '+tfNames[tf];
-  document.getElementById('barCount').textContent=data.length+' nến minh họa';
-  updateStats(data[data.length-1]);
- }
- function updateStats(bar){
-  document.getElementById('lastPrice').textContent=fmt(bar.close);
-  const pct=(bar.close-bar.open)/bar.open*100;
-  document.getElementById('priceChange').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'% '+(pct>=0?'▲':'▼');
-  document.getElementById('priceChange').style.color=pct>=0?'var(--green)':'var(--red)';
-  document.getElementById('ohlc').textContent=`O ${fmt(bar.open)}　H ${fmt(bar.high)}　L ${fmt(bar.low)}　C ${fmt(bar.close)}`;
-  document.getElementById('sOpen').textContent=fmt(bar.open);
-  document.getElementById('sHigh').textContent=fmt(bar.high);
-  document.getElementById('sLow').textContent=fmt(bar.low);
-  document.getElementById('sPrev').textContent=fmt(data[data.length-2].close);
- }
- document.getElementById('timeframes').addEventListener('click',e=>{const b=e.target.closest('[data-tf]');if(b)render(b.dataset.tf)});
- document.getElementById('fitBtn').onclick=()=>chart.timeScale().fitContent();
- document.getElementById('resetBtn').onclick=()=>{chart.timeScale().fitContent();chart.priceScale('right').applyOptions({autoScale:true})};
- const ro=new ResizeObserver(entries=>{for(const entry of entries){chart.applyOptions({width:entry.contentRect.width,height:entry.contentRect.height})}});
- ro.observe(el);
- const sw=document.getElementById('soundSwitch');sw.addEventListener('click',()=>{sw.classList.toggle('on');sw.setAttribute('aria-pressed',sw.classList.contains('on')?'true':'false')});
- render('1m');
-})();
-</script>
+<script src="./app.js"></script>
+
 </body>
 </html>
