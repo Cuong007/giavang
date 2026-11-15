@@ -3,7 +3,11 @@ name: Verify Gold Analyzer
 on:
   push:
     branches: [main]
+    paths-ignore: ['.ci-diagnostics.txt']
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   verify:
@@ -27,6 +31,23 @@ jobs:
           open("/tmp/app.js", "w", encoding="utf-8").write(inline[0])
           PY
           node --check /tmp/app.js
+      - name: Save JavaScript syntax diagnostics
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node --check /tmp/app.js > /tmp/syntax-check.log 2>&1 || true
+          {
+            echo "Workflow run: ${{ github.run_id }}"
+            echo "Commit: ${{ github.sha }}"
+            echo
+            cat /tmp/syntax-check.log
+          } > .ci-diagnostics.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .ci-diagnostics.txt
+          git commit -m "Record CI syntax diagnostics [skip ci]" || exit 0
+          git push
       - name: Check chart library CDN
         run: |
           curl -fsSL --max-time 30 https://unpkg.com/lightweight-charts@5.0.8/dist/lightweight-charts.standalone.production.js -o /tmp/lightweight-charts.js
