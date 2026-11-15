@@ -38,6 +38,8 @@ jobs:
         run: |
           mkdir -p www
           cp index.html www/index.html
+          mkdir -p www/data
+          cp data/xauusd-1m.json www/data/xauusd-1m.json
 
       - name: Generate Android project
         run: npx cap add android
@@ -53,7 +55,7 @@ jobs:
 
       - name: Package source ZIP
         run: |
-          zip -r gold-analyzer-source.zip index.html README.md package.json capacitor.config.json
+          zip -r gold-analyzer-source.zip index.html README.md package.json capacitor.config.json data/xauusd-1m.json scripts/update-history.py
 
       - name: Upload APK and source ZIP
         uses: actions/upload-artifact@v4
