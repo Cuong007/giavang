@@ -148,6 +148,15 @@ jobs:
           await page.locator('.indicator-chip button').first().click();
           await page.waitForFunction(() => document.querySelectorAll('#alertRules input[type=checkbox]').length === 1);
           await page.locator('#alertRules input[type=checkbox]').first().check();
+          await page.locator('#alertSoundFile').setInputFiles({ name:'test-alert.wav', mimeType:'audio/wav', buffer:Buffer.from('RIFF0000WAVEfmt ') });
+          await page.waitForFunction(() => (document.getElementById('alertSoundName')?.textContent || '').includes('test-alert.wav'));
+          await page.locator('#alertRules select').first().selectOption('custom');
+          const storedAudio = await page.evaluate(async () => await new Promise((resolve,reject) => {
+            const req=indexedDB.open('GoldAnalyzerSounds',1);
+            req.onsuccess=()=>{const db=req.result;const get=db.transaction('files','readonly').objectStore('files').get('alert');get.onsuccess=()=>resolve({exists:!!get.result,type:get.result?.type});get.onerror=()=>reject(get.error);};
+            req.onerror=()=>reject(req.error);
+          }));
+          if (!storedAudio.exists || storedAudio.type !== 'audio/wav') throw new Error('Custom alert audio was not persisted in IndexedDB: '+JSON.stringify(storedAudio));
           await page.locator('#soundSwitch').click();
           await page.evaluate(() => window.FVGIndicator.alert('box.created',{message:'CI alert event'}));
           await page.waitForFunction(() => (document.getElementById('indicatorStatus')?.textContent || '').includes('Cảnh báo:'));
