@@ -30,14 +30,16 @@ Mở `index.html` bằng Chrome/Edge khi có Internet. Thư viện biểu đồ 
 
 
 ## Kho lưu trữ và kích hoạt indicator JavaScript
-- Dán toàn bộ nội dung file JavaScript (bao gồm script độc lập/IIFE như `FVGIndicator`) vào ô **INDICATOR · JAVASCRIPT** rồi nhấn **Lưu mã JS**.
-- Mã mới lưu mặc định ở trạng thái **chưa kích hoạt**; chỉ khi nhấn **Kích hoạt** ứng dụng mới thực thi script và áp dụng lên biểu đồ. Nút **Tắt** dừng indicator và gỡ các series được tạo qua `context.addSeries()`.
-- Script cần công khai API toàn cục, ví dụ `window.FVGIndicator`, với `init(context)` và `update(bar)`. Context cung cấp `chart`, `candles`, `LightweightCharts`, `container`, `timeframe`, `getBars()`, `addSeries()`, `removeSeries()`, `setStatus()`. Có thể bổ sung `reset()` và `setConfig()`.
-- `update(bar)` nhận nến có `time` (Unix giây), `open`, `high`, `low`, `close`, `volume`, `isOpen`. Khi kích hoạt, app gọi `init(context)` rồi phát lại dữ liệu nến hiện có qua `update(bar)`; tick mới tiếp tục được gửi vào `update(bar)`.
-- Trạng thái kích hoạt được lưu trên thiết bị. Indicator đã bật sẽ được kích hoạt lại khi mở app; indicator chưa bật sẽ không chạy và không vẽ. Lưu mã trùng sẽ cập nhật source và tự chuyển về trạng thái chưa kích hoạt.
-- **Mở** đưa mã đã lưu trở lại khung soạn thảo; **Xóa** xóa từng mã; **Xóa toàn bộ kho** xóa tất cả mã đã lưu.
-- Kho được lưu bằng localStorage trên thiết bị/trình duyệt hiện tại; không đồng bộ giữa các thiết bị. Việc lưu trữ không chuyển đổi Pine Script sang JavaScript.
-- JavaScript được kích hoạt có thể thực thi mã tùy ý trong ngữ cảnh ứng dụng. Chỉ kích hoạt mã từ nguồn bạn tin cậy; ưu tiên dùng `context.addSeries()` để app có thể gỡ series khi tắt.
+- Dán toàn bộ file JavaScript (kể cả IIFE) vào ô **INDICATOR · JAVASCRIPT** rồi nhấn **Lưu mã JS**. Mã mới mặc định chưa kích hoạt.
+- Chỉ khi nhấn **Kích hoạt** ứng dụng mới thực thi mã và áp dụng lên biểu đồ. **Tắt** sẽ dừng indicator, gỡ canvas overlay và các series do indicator tạo.
+- Hỗ trợ hai kiểu API:
+  - API chung: `init(context)`, `update(bar)`; context có `chart`, `candles`, `container`, `timeframe`, `getBars()`, `addSeries()`, `removeSeries()`, `setStatus()`.
+  - API biểu đồ VN30 PRO/legacy: `window.FVGIndicator.init({ chart, series, container, rightOffset })`, `update(candles, rawCandles, timeframe)`. Ứng dụng tự truyền chuỗi nến đang xem và dữ liệu M1 gốc (tối đa 6.000 nến trong khung 1m/3m).
+- Với API legacy, app tự nhận diện indicator có `config` và `update(candles, rawCandles, timeframe)`; canvas overlay do script thêm vào vùng biểu đồ được giữ khi bật và gỡ khi tắt.
+- Trạng thái kích hoạt được lưu trên thiết bị. Indicator đã bật sẽ được kích hoạt lại khi mở app; indicator chưa bật không chạy và không vẽ. Lưu lại mã trùng sẽ cập nhật source và chuyển về chưa kích hoạt.
+- **Mở** đưa mã đã lưu vào khung soạn thảo; **Xóa** xóa từng mã; **Xóa toàn bộ kho** xóa tất cả mã.
+- Kho lưu bằng localStorage trên thiết bị/trình duyệt hiện tại, không đồng bộ giữa thiết bị. Pine Script không tự chuyển thành JavaScript.
+- JavaScript đã kích hoạt có thể thực thi mã tùy ý trong ứng dụng. Chỉ kích hoạt mã từ nguồn đáng tin cậy.
 
 ## Lịch sử 6.000 nến M1
 - GitHub Actions tự làm mới `data/xauusd-1m.json` mỗi 15 phút bằng workflow `Refresh XAUUSD 6000 M1 history`.
