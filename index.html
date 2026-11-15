@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gold Analyzer — XAU/USD</title>
-<script src="https://unpkg.com/lightweight-charts@5.0.8/dist/lightweight-charts.standalone.production.js"></script>
+<script src="https://unpkg.com/lightweight-charts@5.0.8/dist/lightweight-charts.standalone.production.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/lightweight-charts@5.0.8/dist/lightweight-charts.standalone.production.js';"></script>
 <style>
 :root{--bg:#0b0f14;--panel:#111821;--panel2:#151f2a;--line:#243140;--muted:#8392a5;--text:#e8eef5;--gold:#e8b65b;--green:#19c78a;--red:#f05d68;--blue:#66aaff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
@@ -84,6 +84,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   "use strict";
   const API = "https://biquote.io/api";
   const chartEl = document.getElementById("chart");
+  if (!window.LightweightCharts) { const m=el("chartMessage"); if(m) m.textContent="Không tải được thư viện biểu đồ. Hãy kiểm tra Internet hoặc thử mở bằng Chrome."; setStatus("Không tải được thư viện biểu đồ",false); el("chartStatus").textContent="Lỗi thư viện biểu đồ"; return; }
   const chart = LightweightCharts.createChart(chartEl, {
     width: chartEl.clientWidth, height: chartEl.clientHeight,
     layout: { background: { type: "solid", color: "#111821" }, textColor: "#8292a5", fontFamily: "Inter, system-ui, sans-serif" },
@@ -104,6 +105,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     },
     handleScroll: { mouseWheel: true, pressedMouseMove: true }, handleScale: { mouseWheel: true, pinch: true }
   });
+  const startupMessage=el("chartMessage"); if(startupMessage) startupMessage.remove(); el("chartStatus").textContent="Biểu đồ đã khởi tạo · đang tải nến";
   const candles = chart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: "#19b985", downColor: "#ed5c68", borderUpColor: "#19b985", borderDownColor: "#ed5c68", wickUpColor: "#19b985", wickDownColor: "#ed5c68"
   });
@@ -169,7 +171,9 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       setStatus("Đã nhận dữ liệu XAUUSD", true);
     } catch (err) {
       setStatus("Lỗi tải nến: " + err.message, false);
-      console.error(err);
+      el("chartStatus").textContent = "Không tải được dữ liệu nến";
+      el("barCount").textContent = "Lỗi dữ liệu: " + err.message;
+      console.error("Gold Analyzer candle API error:", err);
     } finally { busy = false; }
   }
   function updateQuote(q) {
