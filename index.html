@@ -76,7 +76,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
    <div class="feed-item"><div class="feed-label">TRẠNG THÁI BIỂU ĐỒ</div><div class="feed-value up" id="chartStatus">Đang khởi tạo biểu đồ…</div></div>
    <div class="feed-item indicator-feed">
     <div class="feed-label">INDICATOR · JAVASCRIPT</div>
-    <div class="placeholder" style="margin-bottom:9px">Dán toàn bộ file .js rồi bấm Lưu. Mã mới lưu mặc định chưa kích hoạt. Chỉ mã được bấm <b>Kích hoạt</b> mới được chạy và áp dụng lên biểu đồ. Script cần công khai API toàn cục (ví dụ <b>window.FVGIndicator</b>) có hàm <b>init(context)</b>, <b>update(bar)</b>; có thể thêm <b>reset()</b> và <b>setConfig()</b>.</div>
+    <div class="placeholder" style="margin-bottom:9px">Dán toàn bộ file .js rồi bấm Lưu. Mã mới lưu mặc định chưa kích hoạt. Chỉ mã được bấm <b>Kích hoạt</b> mới chạy. Hỗ trợ API chung <b>init(context)/update(bar)</b> và API biểu đồ như <b>FVGIndicator.init({ chart, series, container })</b>, <b>update(candles, rawCandles, timeframe)</b>.</div>
     <textarea id="indicatorCode" spellcheck="false" aria-label="Mã indicator JavaScript" placeholder="Dán toàn bộ mã JavaScript indicator vào đây..."></textarea>
     <div class="indicator-actions"><button class="tool-btn" id="addIndicatorBtn">＋ Lưu mã JS</button><button class="tool-btn" id="clearIndicatorsBtn">Xóa toàn bộ kho</button></div>
     <div id="indicatorStatus" class="feed-label" style="margin-top:8px">Kho đang trống. Chưa có indicator nào được cài hoặc chạy.</div>
@@ -373,6 +373,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   function cleanupLegacyIndicator(api, addedTopbarNodes) {
     try {
       if (api && api._S) {
+        if (api._S.raf) cancelAnimationFrame(api._S.raf);
         if (api._S.canvas && api._S.canvas.parentNode) api._S.canvas.parentNode.removeChild(api._S.canvas);
         api._S.ctx = null;
         api._S.chart = null;
@@ -406,7 +407,11 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       // (hoặc khôi phục trạng thái đã kích hoạt sau khi tải lại ứng dụng).
       const topbar = document.querySelector(".topbar");
       const topbarBefore = new Set(topbar ? [...topbar.children] : []);
-      const execute = new Function("window", "LightweightCharts", item.code);
+      let executableCode = item.code;
+      if (/root\.FVGIndicator\s*=\s*api/.test(executableCode)) {
+        executableCode = executableCode.replace("root.requestAnimationFrame(loop);", "S.raf = root.requestAnimationFrame(loop);");
+      }
+      const execute = new Function("window", "LightweightCharts", executableCode);
       execute(window, window.LightweightCharts);
       const api = findIndicatorApi(item);
       const legacy = isLegacyChartIndicator(api);
