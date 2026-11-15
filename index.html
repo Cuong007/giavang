@@ -235,7 +235,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
         const native = history.timeframes[timeframeKeys[current]];
         data = Array.isArray(native) && native.length ? toDukBars(native) : aggregateBars(historyM1, tfSeconds[current]);
       }
-      const countLabel = data.length.toLocaleString("en-US") + " nến · Dukascopy BID" + (current === "1m" ? " · tối thiểu 6.000 M1" : "");
+      const countLabel = data.length + " nến · Dukascopy BID" + (current === "1m" ? " · tối thiểu 6.000 M1" : "");
       if (!data.length) throw new Error("Không có nến hợp lệ");
       bars = data;
       candles.setData(data.map(({time,open,high,low,close}) => ({time,open,high,low,close})));
