@@ -90,7 +90,18 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     grid: { vertLines: { color: "#1d2935" }, horzLines: { color: "#1d2935" } },
     crosshair: { mode: LightweightCharts.CrosshairMode.Normal, vertLine: { color: "#7e8fa3", labelBackgroundColor: "#344354" }, horzLine: { color: "#7e8fa3", labelBackgroundColor: "#344354" } },
     rightPriceScale: { borderColor: "#293746", scaleMargins: { top: .12, bottom: .12 } },
-    timeScale: { borderColor: "#293746", timeVisible: true, secondsVisible: false },
+    timeScale: {
+      visible: true, borderVisible: true, borderColor: "#526273", ticksVisible: true,
+      timeVisible: true, secondsVisible: false, rightOffset: 8,
+      tickMarkFormatter: (time, tickMarkType, locale) => {
+        const d = typeof time === "number" ? new Date(time * 1000) : new Date(Date.UTC(time.year, time.month - 1, time.day));
+        if (!Number.isFinite(d.getTime())) return "";
+        const pad = n => String(n).padStart(2, "0");
+        const date = pad(d.getDate()) + "/" + pad(d.getMonth() + 1);
+        const clock = pad(d.getHours()) + ":" + pad(d.getMinutes());
+        return current === "1D" ? date + "/" + d.getFullYear() : date + " " + clock;
+      }
+    },
     handleScroll: { mouseWheel: true, pressedMouseMove: true }, handleScale: { mouseWheel: true, pinch: true }
   });
   const candles = chart.addSeries(LightweightCharts.CandlestickSeries, {
