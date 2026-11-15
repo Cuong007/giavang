@@ -1,4 +1,5 @@
 name: Verify Gold Analyzer
+# Verify waits for a Dukascopy cache result before exercising chart indicators.
 
 on:
   pull_request:
