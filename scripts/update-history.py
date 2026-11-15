@@ -63,8 +63,13 @@ def main():
         raise RuntimeError(f"Only {len(overlap)} overlapping spot/futures bars; refusing to align")
     basis = statistics.median(spot[t]["close"] - yahoo[t]["close"] for t in overlap)
 
+    # Do not let the futures feed extend beyond the latest real XAUUSD spot bar.
+    # The chart must end on the actual MT5 spot series, not a later futures-only candle.
+    latest_spot_time = max(spot)
     merged = {}
     for stamp, row in yahoo.items():
+        if stamp > latest_spot_time:
+            continue
         merged[stamp] = {
             "time": stamp,
             "open": round(row["open"] + basis, 5),
@@ -110,9 +115,18 @@ def main():
         "bars": bars
     }
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
+    if os.path.exists(OUT):
+        try:
+            with open(OUT, encoding="utf-8") as file:
+                previous = json.load(file)
+            if previous.get("bars") == bars and previous.get("alignment") == output["alignment"]:
+                print(f"History unchanged; keeping existing cache ({len(bars)} bars).")
+                return
+        except Exception:
+            pass
     with open(OUT, "w", encoding="utf-8") as file:
         json.dump(output, file, separators=(",", ":"), ensure_ascii=False)
-    print(f"PASS: wrote {len(bars)} M1 bars; overlap={len(overlap)}; basis={basis:.5f}; output={OUT}")
+    print(f"PASS: wrote {len(bars)} M1 bars; overlap={len(overlap)}; basis={basis:.5f}; latest spot timestamp={latest_spot_time}; output={OUT}")
 
 if __name__ == "__main__":
     main()
