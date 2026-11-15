@@ -322,9 +322,9 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   const runningIndicators = new Map();
 
   function indicatorName(code, index) {
-    const header = code.match(/^\\s*\\/\\*\\s*[-=*\\s]*([^\\r\\n*]+\\.js)\\b/i);
+    const header = code.match(/^\s*\/\*\s*[-=*\s]*([^\r\n*]+\.js)\b/i);
     if (header) return header[1].trim();
-    const declared = code.match(/(?:class|function|const|let|var)\\s+([A-Za-z_$][\\w$]*)/);
+    const declared = code.match(/(?:class|function|const|let|var)\s+([A-Za-z_$][\w$]*)/);
     if (declared) return declared[1];
     if (/FVGIndicator/.test(code)) return "FVGIndicator";
     return "Indicator " + (index + 1);
@@ -413,10 +413,6 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       if (!item) continue;
       try {
         if (replay && typeof running.api.reset === "function") running.api.reset();
-        if (replay && typeof running.api.init === "function") {
-          // Giữ nguyên context và series đã được tạo trong lần kích hoạt.
-          running.api.init(running.context);
-        }
         if (typeof running.api.update === "function") {
           const feed = replay ? bars : bars.slice(-1);
           for (const bar of feed) running.api.update({...bar});
