@@ -98,7 +98,7 @@ jobs:
           try {
             await page.waitForFunction(() => {
               const text = document.getElementById('barCount')?.textContent || '';
-              return text.includes('nến') || text.startsWith('Lỗi dữ liệu');
+              return text.includes('Dukascopy') || text.startsWith('Lỗi dữ liệu');
             }, { timeout: 25000 });
           } catch {}
           const remoteHistory = await page.evaluate(async () => {
