@@ -56,3 +56,11 @@ Mở `index.html` bằng Chrome/Edge khi có Internet. Thư viện biểu đồ 
 - `update(bars)` được gọi sau khi tải lịch sử và mỗi khi giá cập nhật. `bars` là mảng nến tăng dần theo thời gian, mỗi phần tử có `time` (Unix seconds), `open`, `high`, `low`, `close`.
 - Indicator đã nạp được lưu trong bộ nhớ trình duyệt trên thiết bị đó. Nút **Gỡ** xóa riêng indicator; **Xóa tất cả** gỡ toàn bộ.
 - Chỉ dán JavaScript từ nguồn đáng tin cậy: mã được thực thi trong trang và có thể truy cập dữ liệu/trạng thái của ứng dụng.
+
+
+## Lịch sử 6.000 nến M1
+- GitHub Actions tự làm mới `data/xauusd-1m.json` mỗi 15 phút bằng workflow `Refresh XAUUSD 6000 M1 history`.
+- BiQuote hiện chỉ trả khoảng 301 nến M1 trong feed MT5, không hỗ trợ phân trang lịch sử sâu. Yahoo Finance `GC=F` (COMEX Gold Futures) trả trên 6.000 nến M1 trong cửa sổ 7 ngày.
+- Để giữ biểu đồ gần với XAUUSD spot, bộ tạo dữ liệu căn chỉnh lịch sử GC=F bằng chênh lệch trung vị so với các nến BiQuote XAUUSD MT5 trùng timestamp, rồi thay các nến trùng bằng nến spot MT5 thực tế.
+- Vì vậy 301 nến gần nhất là spot CFD MT5; phần lịch sử sâu là futures proxy đã căn chỉnh. Đây không phải 6.000 nến spot nguyên bản. Basis futures/spot có thể biến động; không dùng như dữ liệu khớp lệnh hoặc kiểm định cần độ chính xác tuyệt đối.
+- APK chứa bản cache tại thời điểm build. Web app đọc cache từ `data/xauusd-1m.json`; GitHub Actions cập nhật file định kỳ.
