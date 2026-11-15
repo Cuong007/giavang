@@ -1,0 +1,8 @@
+{
+  "appId": "com.cuong007.giavang",
+  "appName": "Gold Analyzer",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
