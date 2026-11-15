@@ -370,7 +370,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   function legacyIndicatorInput() {
     return { candles: bars.map(b => ({...b})), raw: rawBars.map(b => ({...b})), timeframe: current };
   }
-  function cleanupLegacyIndicator(api, addedTopbarNodes) {
+  function cleanupLegacyIndicator(api, addedTopbarNodes, addedChartNodes) {
     try {
       if (api && api._S) {
         if (api._S.raf) cancelAnimationFrame(api._S.raf);
@@ -381,13 +381,14 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
         api._S.canvas = null;
       }
     } catch (_) {}
+    for (const node of addedChartNodes || []) { try { node.remove(); } catch (_) {} }
     for (const node of addedTopbarNodes || []) { try { node.remove(); } catch (_) {} }
   }
   function deactivateIndicator(id, quiet) {
     const running = runningIndicators.get(id);
     if (running) {
       try { if (running.api && typeof running.api.reset === "function") running.api.reset(); } catch (error) { console.warn("Indicator reset error:", error); }
-      if (running.legacy) cleanupLegacyIndicator(running.api, running.addedTopbarNodes);
+      if (running.legacy) cleanupLegacyIndicator(running.api, running.addedTopbarNodes, running.addedChartNodes);
       for (const series of running.series) {
         try { chart.removeSeries(series); } catch (_) {}
       }
@@ -407,6 +408,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       // (hoặc khôi phục trạng thái đã kích hoạt sau khi tải lại ứng dụng).
       const topbar = document.querySelector(".topbar");
       const topbarBefore = new Set(topbar ? [...topbar.children] : []);
+      const chartNodesBefore = new Set([...chartEl.children]);
       let executableCode = item.code;
       if (/root\.FVGIndicator\s*=\s*api/.test(executableCode)) {
         executableCode = executableCode.replace("root.requestAnimationFrame(loop);", "S.raf = root.requestAnimationFrame(loop);");
@@ -421,7 +423,8 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
         else api.init(context);
       }
       const addedTopbarNodes = topbar ? [...topbar.children].filter(node => !topbarBefore.has(node)) : [];
-      runningIndicators.set(item.id, { api, context, series, legacy, addedTopbarNodes });
+      const addedChartNodes = [...chartEl.children].filter(node => !chartNodesBefore.has(node));
+      runningIndicators.set(item.id, { api, context, series, legacy, addedTopbarNodes, addedChartNodes });
       if (typeof api.update === "function") {
         if (legacy) {
           const input = legacyIndicatorInput();
