@@ -176,7 +176,7 @@ jobs:
           await page.locator('#indicatorCode').fill(legacy);
           await page.locator('#addIndicatorBtn').click();
           await page.waitForFunction(() => (document.getElementById('indicatorStatus')?.textContent || '').includes('Đã lưu fvg-indicator.js'));
-          const legacyRow = page.locator('.indicator-chip').first();
+          const legacyRow = page.locator('.indicator-chip').last();
           await legacyRow.locator('button').filter({ hasText: 'Kích hoạt' }).click();
           await page.waitForFunction(() => !!window.__legacyArgs);
           const legacyResult = await page.evaluate(() => {
@@ -188,7 +188,7 @@ jobs:
           if (!legacyResult.visible || legacyResult.args.raw < 6000 || legacyResult.args.candles < 6000 || legacyResult.args.tf !== '1m') throw new Error('Legacy FVG API did not receive chart data or draw on chart: ' + JSON.stringify(legacyResult));
           await legacyRow.locator('button').filter({ hasText: 'Tắt' }).click();
           if (await page.locator('#chart canvas').count() !== canvasCount) throw new Error('Legacy overlay canvas was not removed on deactivate');
-          await page.locator('.indicator-chip').first().locator('button').filter({ hasText: 'Xóa' }).click();
+          await page.locator('.indicator-chip').last().locator('button').filter({ hasText: 'Xóa' }).click();
           if (overlayCount !== 0) throw new Error('Chart startup overlay was not removed');
           if (errors.length) throw new Error('Browser errors: ' + errors.join('; '));
           console.log('PASS: Chromium chart; generic indicator lifecycle; legacy FVG API received 6000 M1 bars and painted visible overlay pixels; deactivate removed overlay.');
