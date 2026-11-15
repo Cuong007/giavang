@@ -84,6 +84,7 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   "use strict";
   const API = "https://biquote.io/api";
   const chartEl = document.getElementById("chart");
+  const el = id => document.getElementById(id);
 
   // Bắt lỗi ngay từ đầu: không gọi el()/setStatus() trước khi chúng được khai báo.
   window.addEventListener("error", function (event) {
@@ -148,7 +149,6 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
   const apiIntervals = { "1m":"1m", "5m":"5m", "15m":"15m", "30m":"30m", "1H":"1h", "4H":"4h", "1D":"1d" };
   const tfNames = { "1m":"1 phút", "3m":"3 phút", "5m":"5 phút", "15m":"15 phút", "30m":"30 phút", "1H":"1 giờ", "4H":"4 giờ", "1D":"1 ngày" };
   let current = "1m", bars = [], busy = false, hub = null, soundEnabled = false, audioCtx = null, lastAlertPrice = null;
-  const el = id => document.getElementById(id);
   function setStatus(text, good) {
     el("connectionText").textContent = text;
     const dot = document.querySelector(".dot");
