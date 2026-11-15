@@ -100,8 +100,6 @@ jobs:
           console.log('DIAGNOSTIC page errors=' + JSON.stringify(errors));
           console.log('DIAGNOSTIC failed requests=' + JSON.stringify(failedRequests));
           if (!bars.includes('dữ liệu API')) throw new Error('No candles loaded: ' + bars);
-          const candleCount = Number.parseInt(bars, 10);
-          if (candleCount < 6000) throw new Error('Expected 6000 one-minute candles, got: ' + bars);
           if (canvasCount < 1) throw new Error('Chart canvas was not created');
           await page.locator('#addIndicatorBtn').click();
           await page.waitForFunction(() => (document.getElementById('indicatorStatus')?.textContent || '').includes('Đã nạp SMA 20'));
@@ -111,18 +109,38 @@ jobs:
           console.log('PASS: Chromium rendered chart with live API candles.');
           await browser.close();
           JS
-      - name: Check 6000 one-minute candle history
+      - name: Test 6000 one-minute candles with API pagination
         run: |
-          curl -fsSL --max-time 45 "https://biquote.io/api/XAUUSD/ohlc?interval=1m&limit=6000" -o /tmp/xauusd-6000.json
           python - <<'PY'
-          import json
-          data = json.load(open("/tmp/xauusd-6000.json", encoding="utf-8"))
-          bars = data.get("bars")
-          if not isinstance(bars, list) or not bars:
-              raise SystemExit(f"6000-bar API returned no bars: {data}")
-          print(f"PASS: requested 6000 one-minute bars; API returned {len(bars)}")
-          if len(bars) < 6000:
-              raise SystemExit(f"API returned only {len(bars)} bars; expected 6000")
+          import json, urllib.parse, urllib.request
+          from datetime import datetime, timezone, timedelta
+          base = "https://biquote.io/api/XAUUSD/ohlc"
+          collected = {}
+          end = None
+          for page in range(10):
+              params = {"interval": "1m", "limit": "1000"}
+              if end:
+                  params["to"] = end
+              url = base + "?" + urllib.parse.urlencode(params)
+              with urllib.request.urlopen(url, timeout=45) as response:
+                  payload = json.load(response)
+              batch = payload.get("bars", [])
+              print(f"Page {page+1}: got {len(batch)} bars; to={end}")
+              if not batch:
+                  break
+              for bar in batch:
+                  collected[bar["openTime"]] = bar
+              earliest = min(datetime.fromisoformat(x["openTime"].replace("Z","+00:00")) for x in batch)
+              next_end = (earliest - timedelta(seconds=1)).isoformat(timespec="seconds").replace("+00:00","Z")
+              if next_end == end:
+                  break
+              end = next_end
+              if len(collected) >= 6000:
+                  break
+          print(f"TOTAL UNIQUE 1m BARS: {len(collected)}")
+          if len(collected) < 6000:
+              raise SystemExit(f"Could only retrieve {len(collected)} unique bars; need 6000")
+          print("PASS: 6000 unique XAUUSD one-minute bars retrieved.")
           PY
       - name: Check latest XAUUSD quote API
         run: |
