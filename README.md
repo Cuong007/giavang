@@ -29,13 +29,15 @@ Mở `index.html` bằng Chrome/Edge khi có Internet. Thư viện biểu đồ 
 - Chưa có backend/database riêng, đồng bộ đa thiết bị hoặc lưu offline.
 
 
-## Kho lưu trữ indicator JavaScript
-- Trong bảng điều khiển, dán toàn bộ nội dung file JavaScript (bao gồm script độc lập/IIFE như `FVGIndicator`) vào ô **INDICATOR · JAVASCRIPT** rồi nhấn **Lưu mã JS**.
-- Ứng dụng chỉ kiểm tra cú pháp JavaScript và lưu nguyên văn mã vào bộ nhớ cục bộ của thiết bị. Mã **không được thực thi**, không được gắn lên biểu đồ và không có indicator mặc định.
-- Nút **Mở** đưa mã đã lưu trở lại khung soạn thảo; **Xóa** xóa từng mã; **Xóa toàn bộ kho** xóa tất cả mã đã lưu.
+## Kho lưu trữ và kích hoạt indicator JavaScript
+- Dán toàn bộ nội dung file JavaScript (bao gồm script độc lập/IIFE như `FVGIndicator`) vào ô **INDICATOR · JAVASCRIPT** rồi nhấn **Lưu mã JS**.
+- Mã mới lưu mặc định ở trạng thái **chưa kích hoạt**; chỉ khi nhấn **Kích hoạt** ứng dụng mới thực thi script và áp dụng lên biểu đồ. Nút **Tắt** dừng indicator và gỡ các series được tạo qua `context.addSeries()`.
+- Script cần công khai API toàn cục, ví dụ `window.FVGIndicator`, với `init(context)` và `update(bar)`. Context cung cấp `chart`, `candles`, `LightweightCharts`, `container`, `timeframe`, `getBars()`, `addSeries()`, `removeSeries()`, `setStatus()`. Có thể bổ sung `reset()` và `setConfig()`.
+- `update(bar)` nhận nến có `time` (Unix giây), `open`, `high`, `low`, `close`, `volume`, `isOpen`. Khi kích hoạt, app gọi `init(context)` rồi phát lại dữ liệu nến hiện có qua `update(bar)`; tick mới tiếp tục được gửi vào `update(bar)`.
+- Trạng thái kích hoạt được lưu trên thiết bị. Indicator đã bật sẽ được kích hoạt lại khi mở app; indicator chưa bật sẽ không chạy và không vẽ. Lưu mã trùng sẽ cập nhật source và tự chuyển về trạng thái chưa kích hoạt.
+- **Mở** đưa mã đã lưu trở lại khung soạn thảo; **Xóa** xóa từng mã; **Xóa toàn bộ kho** xóa tất cả mã đã lưu.
 - Kho được lưu bằng localStorage trên thiết bị/trình duyệt hiện tại; không đồng bộ giữa các thiết bị. Việc lưu trữ không chuyển đổi Pine Script sang JavaScript.
-- Chỉ lưu mã từ nguồn đáng tin cậy. Khi người dùng chủ động chọn cách chạy indicator trong tương lai, cần có cơ chế thực thi riêng và cảnh báo bảo mật.
-
+- JavaScript được kích hoạt có thể thực thi mã tùy ý trong ngữ cảnh ứng dụng. Chỉ kích hoạt mã từ nguồn bạn tin cậy; ưu tiên dùng `context.addSeries()` để app có thể gỡ series khi tắt.
 
 ## Lịch sử 6.000 nến M1
 - GitHub Actions tự làm mới `data/xauusd-1m.json` mỗi 15 phút bằng workflow `Refresh XAUUSD 6000 M1 history`.
