@@ -66,6 +66,20 @@ jobs:
               raise SystemExit(f"OHLC bar missing fields: {bars[0]}")
           print(f"PASS: {len(bars)} XAUUSD 1m bars received; latest close={bars[0]['close']}")
           PY
+      - name: Validate cached 6000 M1 history
+        run: |
+          python - <<'PY'
+          import json
+          data = json.load(open("data/xauusd-1m.json", encoding="utf-8"))
+          bars = data.get("bars", [])
+          if data.get("symbol") != "XAUUSD" or data.get("interval") != "1m" or len(bars) < 6000:
+              raise SystemExit(f"Invalid cached history: symbol={data.get('symbol')} interval={data.get('interval')} count={len(bars)}")
+          if len({x["openTime"] for x in bars}) != len(bars):
+              raise SystemExit("Duplicate timestamps in cached history")
+          if bars != sorted(bars, key=lambda x: x["openTime"]):
+              raise SystemExit("Cached bars are not in ascending time order")
+          print(f"PASS: {len(bars)} ordered unique M1 candles; source={data.get('historySource')}")
+          PY
       - name: Install headless browser
         run: |
           npm install --no-save playwright
@@ -87,7 +101,7 @@ jobs:
           try {
             await page.waitForFunction(() => {
               const text = document.getElementById('barCount')?.textContent || '';
-              return text.includes('dữ liệu API') || text.startsWith('Lỗi dữ liệu');
+              return text.includes('nến') || text.startsWith('Lỗi dữ liệu');
             }, { timeout: 25000 });
           } catch {}
           const canvasCount = await page.locator('#chart canvas').count();
@@ -99,49 +113,17 @@ jobs:
           console.log('DIAGNOSTIC canvases=' + canvasCount + ', overlay=' + overlayCount);
           console.log('DIAGNOSTIC page errors=' + JSON.stringify(errors));
           console.log('DIAGNOSTIC failed requests=' + JSON.stringify(failedRequests));
-          if (!bars.includes('dữ liệu API')) throw new Error('No candles loaded: ' + bars);
+          if (!bars.includes('nến')) throw new Error('No candles loaded: ' + bars);
+          if (Number.parseInt(bars, 10) < 6000) throw new Error('Expected at least 6000 M1 candles, got: ' + bars);
           if (canvasCount < 1) throw new Error('Chart canvas was not created');
           await page.locator('#addIndicatorBtn').click();
           await page.waitForFunction(() => (document.getElementById('indicatorStatus')?.textContent || '').includes('Đã nạp SMA 20'));
           if (await page.locator('.indicator-chip').count() !== 1) throw new Error('SMA 20 JavaScript indicator did not register');
           if (overlayCount !== 0) throw new Error('Chart startup overlay was not removed');
           if (errors.length) throw new Error('Browser errors: ' + errors.join('; '));
-          console.log('PASS: Chromium rendered chart with live API candles.');
+          console.log('PASS: Chromium rendered chart with 6000 cached M1 candles and loaded the SMA 20 JavaScript indicator.');
           await browser.close();
           JS
-      - name: Test 6000 one-minute candles with API pagination
-        run: |
-          python - <<'PY'
-          import json, urllib.parse, urllib.request
-          from datetime import datetime, timezone, timedelta
-          base = "https://biquote.io/api/XAUUSD/ohlc"
-          collected = {}
-          end = None
-          for page in range(10):
-              params = {"interval": "1m", "limit": "1000"}
-              if end:
-                  params["to"] = end
-              url = base + "?" + urllib.parse.urlencode(params)
-              with urllib.request.urlopen(url, timeout=45) as response:
-                  payload = json.load(response)
-              batch = payload.get("bars", [])
-              print(f"Page {page+1}: got {len(batch)} bars; to={end}")
-              if not batch:
-                  break
-              for bar in batch:
-                  collected[bar["openTime"]] = bar
-              earliest = min(datetime.fromisoformat(x["openTime"].replace("Z","+00:00")) for x in batch)
-              next_end = (earliest - timedelta(seconds=1)).isoformat(timespec="seconds").replace("+00:00","Z")
-              if next_end == end:
-                  break
-              end = next_end
-              if len(collected) >= 6000:
-                  break
-          print(f"TOTAL UNIQUE 1m BARS: {len(collected)}")
-          if len(collected) < 6000:
-              raise SystemExit(f"Could only retrieve {len(collected)} unique bars; need 6000")
-          print("PASS: 6000 unique XAUUSD one-minute bars retrieved.")
-          PY
       - name: Check latest XAUUSD quote API
         run: |
           curl -fsSL --max-time 30 "https://biquote.io/api/XAUUSD?allowStale=true" -o /tmp/xauusd-quote.json
