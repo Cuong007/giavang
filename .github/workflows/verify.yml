@@ -132,7 +132,7 @@ jobs:
           if (canvasCount < 1) throw new Error('Chart canvas was not created');
           if (await page.locator('.indicator-chip').count() !== 0) throw new Error('There must be no default indicators in the storage');
           // Full standalone IIFE script: syntax-check and store only; it must NOT execute.
-          const standalone = '/* fvg-indicator.js */\\n(function(root){ "use strict"; root.__fvgExecuted = true; root.FVGIndicator = { init(){}, update(){}, reset(){} }; })(window);';
+          const standalone = '/* fvg-indicator.js */\n(function(root){ "use strict"; root.__fvgExecuted = true; root.FVGIndicator = { init(){}, update(){}, reset(){} }; })(window);';
           await page.locator('#indicatorCode').fill(standalone);
           await page.locator('#addIndicatorBtn').click();
           await page.waitForFunction(() => (document.getElementById('indicatorStatus')?.textContent || '').includes('Đã lưu fvg-indicator.js'));
@@ -145,7 +145,7 @@ jobs:
           if (await page.locator('.indicator-chip').count() !== 0) throw new Error('Stored indicator could not be removed');
           if (overlayCount !== 0) throw new Error('Chart startup overlay was not removed');
           if (errors.length) throw new Error('Browser errors: ' + errors.join('; '));
-          console.log('PASS: Chromium rendered chart with 6000 cached M1 candles and loaded the SMA 20 JavaScript indicator.');
+          console.log('PASS: Chromium rendered chart; standalone JS script stored, persisted and removed without execution.');
           await browser.close();
           JS
       - name: Check latest XAUUSD quote API
