@@ -76,30 +76,10 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
    <div class="feed-item"><div class="feed-label">TRẠNG THÁI BIỂU ĐỒ</div><div class="feed-value up" id="chartStatus">Đang khởi tạo biểu đồ…</div></div>
    <div class="feed-item indicator-feed">
     <div class="feed-label">INDICATOR · JAVASCRIPT</div>
-    <div class="placeholder" style="margin-bottom:9px">Chỉ nạp mã JavaScript đã được chuyển đổi sẵn. Ứng dụng không biên dịch Pine Script. Mỗi indicator cần trả về đối tượng có create(), update() và tùy chọn destroy().</div>
-    <textarea id="indicatorCode" spellcheck="false" aria-label="Mã indicator JavaScript">({
-  name: "SMA 20",
-  create({ chart, LWC }) {
-    const line = chart.addSeries(LWC.LineSeries, {
-      color: "#e8b65b", lineWidth: 2, title: "SMA 20"
-    });
-    return {
-      update(bars) {
-        const period = 20, data = [];
-        let sum = 0;
-        bars.forEach((bar, i) => {
-          sum += bar.close;
-          if (i >= period) sum -= bars[i - period].close;
-          if (i >= period - 1) data.push({ time: bar.time, value: sum / period });
-        });
-        line.setData(data);
-      },
-      destroy() { chart.removeSeries(line); }
-    };
-  }
-})</textarea>
-    <div class="indicator-actions"><button class="tool-btn" id="addIndicatorBtn">＋ Nạp indicator JS</button><button class="tool-btn" id="clearIndicatorsBtn">Xóa tất cả</button></div>
-    <div id="indicatorStatus" class="feed-label" style="margin-top:8px">Có thể dán mã JS vào khung trên.</div>
+    <div class="placeholder" style="margin-bottom:9px">Kho lưu trữ mã JavaScript: dán toàn bộ file .js (kể cả script IIFE như FVGIndicator) rồi bấm Lưu. Ứng dụng chỉ kiểm tra cú pháp và lưu mã trên thiết bị, KHÔNG chạy indicator, KHÔNG gắn vào biểu đồ và KHÔNG có indicator mặc định.</div>
+    <textarea id="indicatorCode" spellcheck="false" aria-label="Mã indicator JavaScript" placeholder="Dán toàn bộ mã JavaScript indicator vào đây..."></textarea>
+    <div class="indicator-actions"><button class="tool-btn" id="addIndicatorBtn">＋ Lưu mã JS</button><button class="tool-btn" id="clearIndicatorsBtn">Xóa toàn bộ kho</button></div>
+    <div id="indicatorStatus" class="feed-label" style="margin-top:8px">Kho đang trống. Chưa có indicator nào được cài hoặc chạy.</div>
     <div id="activeIndicators"></div>
    </div>
    <div class="sound-row"><div><div class="feed-value">Âm thanh cảnh báo</div><div class="feed-label">Bật để nhận cảnh báo tín hiệu</div></div><button class="switch" id="soundSwitch" aria-label="Bật tắt âm thanh"></button></div>
@@ -260,7 +240,6 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       if (!data.length) throw new Error("Không có nến hợp lệ");
       bars = data;
       candles.setData(data.map(({time,open,high,low,close}) => ({time,open,high,low,close})));
-      refreshIndicators();
       chart.timeScale().fitContent();
       el("chartTfLabel").textContent = "· " + tfNames[current];
       el("barCount").textContent = countLabel;
@@ -306,7 +285,6 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
     else { bars.push({time:bucket,open:last.close,high:Math.max(last.close,price),low:Math.min(last.close,price),close:price}); if (bars.length > (current === "1m" ? 6000 : 1200)) bars.shift(); }
     const b=bars[bars.length-1];
     candles.update({time:b.time,open:b.open,high:b.high,low:b.low,close:b.close});
-    refreshIndicators();
     updateBar(b);
   }
   async function fetchQuote() {
@@ -336,103 +314,105 @@ main{width:min(1500px,100%);margin:0 auto;padding:22px;flex:1}
       setInterval(fetchQuote, 10000);
     }
   }
-  // Indicator JavaScript API: object expression { name, create(ctx) => { update(bars), destroy? } }.
-  const activeIndicators = [];
-  function refreshIndicators() {
-    for (const item of activeIndicators) {
-      try { item.instance.update(bars.slice()); }
-      catch (error) { console.error("Indicator update error:", item.name, error); }
+  // Kho mã indicator: chỉ kiểm tra cú pháp và lưu source, tuyệt đối không thực thi.
+  // Chấp nhận cả object expression lẫn file JS độc lập/IIFE tự khai báo API toàn cục.
+  const indicatorStoreKey = "goldAnalyzerIndicatorScripts";
+  let storedIndicators = [];
+  function indicatorName(code, index) {
+    const header = code.match(/^\s*\/\*\s*[-=*\s]*([^\r\n*]+\.js)\b/i);
+    if (header) return header[1].trim();
+    const declared = code.match(/(?:class|function|const|let|var)\s+([A-Za-z_$][\w$]*)/);
+    if (declared) return declared[1];
+    if (/FVGIndicator/.test(code)) return "FVGIndicator";
+    return "Indicator " + (index + 1);
+  }
+  function saveIndicatorStore() {
+    try {
+      localStorage.setItem(indicatorStoreKey, JSON.stringify(storedIndicators));
+    } catch (error) {
+      throw new Error("Không lưu được vào bộ nhớ thiết bị: " + error.message);
     }
   }
   function renderIndicatorList() {
     const root = el("activeIndicators");
     if (!root) return;
     root.replaceChildren();
-    activeIndicators.forEach((item, index) => {
+    if (!storedIndicators.length) {
+      const empty = document.createElement("div");
+      empty.className = "feed-label";
+      empty.textContent = "Kho đang trống.";
+      root.append(empty);
+      return;
+    }
+    storedIndicators.forEach((item, index) => {
       const row = document.createElement("div");
       row.className = "indicator-chip";
       const label = document.createElement("span");
-      label.textContent = "● " + item.name;
+      label.textContent = "▣ " + item.name + " · " + Math.max(1, Math.ceil(item.code.length / 1024)) + " KB";
+      const actions = document.createElement("span");
+      const open = document.createElement("button");
+      open.type = "button";
+      open.textContent = "Mở";
+      open.onclick = () => {
+        el("indicatorCode").value = item.code;
+        el("indicatorStatus").textContent = "Đã đưa " + item.name + " vào khung soạn thảo; chưa chạy.";
+      };
       const remove = document.createElement("button");
       remove.type = "button";
-      remove.textContent = "Gỡ";
+      remove.textContent = "Xóa";
       remove.onclick = () => {
-        try { if (typeof item.instance.destroy === "function") item.instance.destroy(); }
-        catch (error) { console.warn("Indicator cleanup error:", error); }
-        activeIndicators.splice(index, 1);
-        saveIndicatorCodes();
+        storedIndicators.splice(index, 1);
+        saveIndicatorStore();
         renderIndicatorList();
+        el("indicatorStatus").textContent = "Đã xóa mã " + item.name + " khỏi kho.";
       };
-      row.append(label, remove);
+      actions.append(open, remove);
+      row.append(label, actions);
       root.append(row);
     });
   }
-  function saveIndicatorCodes() {
-    try { localStorage.setItem("goldAnalyzerIndicatorCodes", JSON.stringify(activeIndicators.map(x => x.code))); }
-    catch (error) { console.warn("Cannot save indicators:", error); }
-  }
-  function addIndicatorCode(code, persist = true) {
-    // Chấp nhận object indicator có hoặc không có dấu chấm phẩy ở cuối.
-    code = String(code || "").trim().replace(/;\s*$/, "");
+  function storeIndicatorCode(code) {
+    code = String(code || "").trim();
     if (!code) throw new Error("Bạn chưa dán mã JavaScript.");
-    let factory;
-    try {
-      factory = new Function("ctx", '"use strict"; return (\n' + code + '\n);');
-    } catch (syntaxError) {
-      throw new Error("Cú pháp JS không hợp lệ: " + syntaxError.message + ". Hãy dán một object indicator có name và create(ctx), không phải mã Pine Script.");
+    // Compile-only syntax check. Do not invoke the script or its IIFE.
+    try { new Function(code); }
+    catch (error) { throw new Error("Cú pháp JavaScript không hợp lệ: " + error.message); }
+    const duplicate = storedIndicators.findIndex(x => x.code === code);
+    const name = indicatorName(code, storedIndicators.length);
+    if (duplicate >= 0) {
+      storedIndicators[duplicate] = { name, code };
+    } else {
+      storedIndicators.push({ name, code });
     }
-    const definition = factory({
-      chart, LWC: LightweightCharts, candles,
-      getBars: () => bars.slice()
-    });
-    if (!definition || typeof definition.create !== "function") {
-      throw new Error("Mã JS phải trả về object có hàm create(ctx). Ví dụ: ({ name: 'SMA', create(ctx) { ... } }).");
-    }
-    const name = String(definition.name || "Indicator " + (activeIndicators.length + 1));
-    const instance = definition.create({
-      chart, LWC: LightweightCharts, candles,
-      getBars: () => bars.slice()
-    });
-    if (!instance || typeof instance.update !== "function") {
-      throw new Error("create() phải trả về object có hàm update(bars).");
-    }
-    const item = { name, code, instance };
-    activeIndicators.push(item);
-    try { instance.update(bars.slice()); }
-    catch (error) {
-      activeIndicators.pop();
-      if (typeof instance.destroy === "function") instance.destroy();
-      throw error;
-    }
+    saveIndicatorStore();
     renderIndicatorList();
-    if (persist) saveIndicatorCodes();
-    el("indicatorStatus").textContent = "Đã nạp " + name + " · lưu trên thiết bị này.";
-    return item;
+    el("indicatorStatus").textContent = "Đã lưu " + name + ". Mã chỉ được lưu trữ, không thực thi.";
   }
   el("addIndicatorBtn").addEventListener("click", () => {
-    try { addIndicatorCode(el("indicatorCode").value.trim()); }
+    try { storeIndicatorCode(el("indicatorCode").value); }
     catch (error) {
-      el("indicatorStatus").textContent = "Không nạp được JS: " + error.message;
-      console.error("Indicator load error:", error);
+      el("indicatorStatus").textContent = "Không lưu được JS: " + error.message;
+      console.error("Indicator storage error:", error);
     }
   });
   el("clearIndicatorsBtn").addEventListener("click", () => {
-    for (const item of activeIndicators) {
-      try { if (typeof item.instance.destroy === "function") item.instance.destroy(); }
-      catch (error) { console.warn("Indicator cleanup error:", error); }
-    }
-    activeIndicators.length = 0;
-    saveIndicatorCodes();
+    if (!storedIndicators.length) return;
+    if (!window.confirm("Xóa toàn bộ mã indicator đã lưu trên thiết bị này?")) return;
+    storedIndicators = [];
+    saveIndicatorStore();
     renderIndicatorList();
-    el("indicatorStatus").textContent = "Đã gỡ tất cả indicator.";
+    el("indicatorStatus").textContent = "Đã xóa toàn bộ kho mã JS.";
   });
   try {
-    const saved = JSON.parse(localStorage.getItem("goldAnalyzerIndicatorCodes") || "[]");
-    if (Array.isArray(saved)) saved.forEach(code => {
-      try { addIndicatorCode(code, false); }
-      catch (error) { console.warn("Saved indicator could not be restored:", error); }
-    });
-  } catch (error) { console.warn("Cannot restore saved indicators:", error); }
+    const saved = JSON.parse(localStorage.getItem(indicatorStoreKey) || "[]");
+    if (Array.isArray(saved)) {
+      storedIndicators = saved.filter(x => x && typeof x.code === "string" && x.code.trim());
+    }
+  } catch (error) {
+    console.warn("Cannot restore indicator storage:", error);
+    storedIndicators = [];
+  }
+  renderIndicatorList();
 
   function beep() {
     try {
