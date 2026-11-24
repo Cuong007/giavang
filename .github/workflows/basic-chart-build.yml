@@ -9,7 +9,6 @@ on:
         type: choice
         options:
           - basic-chart-v2
-          - basic-chart-v1
 
 permissions:
   contents: read
