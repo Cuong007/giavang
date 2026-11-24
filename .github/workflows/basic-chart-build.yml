@@ -1,4 +1,5 @@
 name: Build Basic Chart APK (private source)
+# V2 is the only maintained chart branch.
 
 on:
   push:
