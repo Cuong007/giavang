@@ -1,0 +1,171 @@
+name: Build Basic Chart APK (private source)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: Source branch in private Cuong007/viewchart
+        required: true
+        type: choice
+        options:
+          - basic-chart-v2
+          - basic-chart-v1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: basic-chart-build-${{ inputs.source_branch }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout public build runner
+        uses: actions/checkout@v4
+
+      - name: Validate private repository token
+        env:
+          VIEWCHART_TOKEN: ${{ secrets.VIEWCHART_TOKEN }}
+          VIEWCHART_READ_TOKEN: ${{ secrets.VIEWCHART_READ_TOKEN }}
+        run: |
+          if [[ -z "${VIEWCHART_TOKEN:-}" && -z "${VIEWCHART_READ_TOKEN:-}" ]]; then
+            echo "::error::Missing VIEWCHART_TOKEN (or VIEWCHART_READ_TOKEN) Actions secret in Cuong007/giavang."
+            exit 1
+          fi
+
+      - name: Checkout private Basic Chart source
+        env:
+          VIEWCHART_TOKEN: ${{ secrets.VIEWCHART_TOKEN }}
+          VIEWCHART_READ_TOKEN: ${{ secrets.VIEWCHART_READ_TOKEN }}
+          SOURCE_BRANCH: ${{ inputs.source_branch }}
+        run: |
+          set -euo pipefail
+          TOKEN="${VIEWCHART_TOKEN:-${VIEWCHART_READ_TOKEN:-}}"
+          mkdir -p /tmp/basic-chart-auth
+          cat > /tmp/basic-chart-auth/askpass.sh <<'ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *) printf '%s\n' "$VIEWCHART_GIT_TOKEN" ;;
+          esac
+          ASKPASS
+          chmod 700 /tmp/basic-chart-auth/askpass.sh
+          export VIEWCHART_GIT_TOKEN="$TOKEN"
+          export GIT_ASKPASS=/tmp/basic-chart-auth/askpass.sh
+          export GIT_TERMINAL_PROMPT=0
+          git clone --depth 1 --branch "$SOURCE_BRANCH" https://github.com/Cuong007/viewchart.git /tmp/basic-chart-source
+          rm -rf /tmp/basic-chart-auth
+          echo "Source branch: $SOURCE_BRANCH"
+          echo "Source commit: $(git -C /tmp/basic-chart-source rev-parse HEAD)"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+
+      - name: Install Android build packages and YAML parser
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          python -m pip install --disable-pip-version-check pyyaml
+
+      - name: Run private build recipe (without pushing source)
+        env:
+          SOURCE_BRANCH: ${{ inputs.source_branch }}
+        run: |
+          set -euo pipefail
+          cd /tmp/basic-chart-source
+          test -f .github/workflows/android-apk.yml
+          cat > /tmp/run_private_build_recipe.py <<'PY'
+          import os
+          import subprocess
+          import sys
+          import yaml
+
+          workflow_path = "/tmp/basic-chart-source/.github/workflows/android-apk.yml"
+          with open(workflow_path, encoding="utf-8") as handle:
+              workflow = yaml.safe_load(handle)
+
+          steps = workflow["jobs"]["build"]["steps"]
+          skip_names = {
+              "Checkout Basic Chart",
+              "Checkout Basic Chart 2.0",
+              "Commit imported upstream and Android project",
+              "Publish APK to private giavang release",
+              "Publish standalone APK release asset",
+          }
+
+          for step in steps:
+              name = step.get("name", "unnamed step")
+              command = step.get("run")
+              if not command or name in skip_names:
+                  continue
+              print(f"\n========== PRIVATE BUILD STEP: {name} ==========", flush=True)
+              env = os.environ.copy()
+              for key, value in (step.get("env") or {}).items():
+                  env[key] = str(value)
+              subprocess.run(command, shell=True, executable="/bin/bash",
+                             cwd="/tmp/basic-chart-source", env=env, check=True)
+
+          apk_candidates = [
+              os.path.join("/tmp/basic-chart-source", name)
+              for name in os.listdir("/tmp/basic-chart-source")
+              if name.lower().endswith(".apk")
+          ]
+          if not apk_candidates:
+              print("ERROR: build recipe completed but no APK was generated.", file=sys.stderr)
+              sys.exit(2)
+          apk_candidates.sort(key=lambda path: os.path.getmtime(path), reverse=True)
+          selected = apk_candidates[0]
+          target = "/tmp/BasicChart.apk"
+          with open(selected, "rb") as src, open(target, "wb") as dst:
+              dst.write(src.read())
+          print(f"APK_READY={target}")
+          PY
+          python /tmp/run_private_build_recipe.py
+
+      - name: Publish APK to private viewchart release
+        env:
+          VIEWCHART_TOKEN: ${{ secrets.VIEWCHART_TOKEN }}
+          VIEWCHART_READ_TOKEN: ${{ secrets.VIEWCHART_READ_TOKEN }}
+          SOURCE_BRANCH: ${{ inputs.source_branch }}
+          GH_TOKEN: ${{ secrets.VIEWCHART_TOKEN || secrets.VIEWCHART_READ_TOKEN }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          TOKEN="${VIEWCHART_TOKEN:-${VIEWCHART_READ_TOKEN:-}}"
+          if [[ -z "$TOKEN" ]]; then
+            echo "::error::Missing token for publishing to private viewchart."
+            exit 1
+          fi
+          VERSION="$(tr -d '[:space:]' < /tmp/basic-chart-source/BASIC_CHART_VERSION)"
+          SOURCE_SHA="$(git -C /tmp/basic-chart-source rev-parse HEAD)"
+          TAG="basic-chart-${SOURCE_BRANCH}-v${VERSION}-build${GITHUB_RUN_NUMBER}"
+          if [[ "$SOURCE_BRANCH" == "basic-chart-v2" ]]; then
+            TITLE="Basic Chart 2.0 v${VERSION} (build ${GITHUB_RUN_NUMBER})"
+          else
+            TITLE="Basic Chart v${VERSION} (build ${GITHUB_RUN_NUMBER})"
+          fi
+          gh release create "$TAG" /tmp/BasicChart.apk \
+            --repo Cuong007/viewchart \
+            --target "$SOURCE_BRANCH" \
+            --title "$TITLE" \
+            --notes "APK build by public runner in Cuong007/giavang. Source branch: $SOURCE_BRANCH; source commit: $SOURCE_SHA."
