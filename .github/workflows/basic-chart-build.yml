@@ -1,6 +1,8 @@
 name: Build Basic Chart APK (private source)
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       source_branch:
@@ -14,7 +16,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: basic-chart-build-${{ inputs.source_branch }}
+  group: basic-chart-build-${{ inputs.source_branch || 'basic-chart-v2' }}
   cancel-in-progress: false
 
 jobs:
@@ -39,7 +41,7 @@ jobs:
         env:
           VIEWCHART_TOKEN: ${{ secrets.VIEWCHART_TOKEN }}
           VIEWCHART_READ_TOKEN: ${{ secrets.VIEWCHART_READ_TOKEN }}
-          SOURCE_BRANCH: ${{ inputs.source_branch }}
+          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v2' }}
         run: |
           set -euo pipefail
           TOKEN="${VIEWCHART_TOKEN:-${VIEWCHART_READ_TOKEN:-}}"
@@ -88,7 +90,7 @@ jobs:
 
       - name: Run private build recipe (without pushing source)
         env:
-          SOURCE_BRANCH: ${{ inputs.source_branch }}
+          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v2' }}
         run: |
           set -euo pipefail
           cd /tmp/basic-chart-source
@@ -147,7 +149,7 @@ jobs:
         env:
           VIEWCHART_TOKEN: ${{ secrets.VIEWCHART_TOKEN }}
           VIEWCHART_READ_TOKEN: ${{ secrets.VIEWCHART_READ_TOKEN }}
-          SOURCE_BRANCH: ${{ inputs.source_branch }}
+          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v2' }}
           GH_TOKEN: ${{ secrets.VIEWCHART_TOKEN || secrets.VIEWCHART_READ_TOKEN }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
