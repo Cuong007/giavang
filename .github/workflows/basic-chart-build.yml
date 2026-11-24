@@ -1,6 +1,6 @@
 name: Build Basic Chart APK (private source)
 # V2 is the only maintained chart branch.
-# Rebuild after alert-priority shared iTick socket refactor.
+# Final rebuild after cold-start-safe alert persistence refinement.
 
 on:
   push:
