@@ -2,6 +2,7 @@ name: Build Basic Chart APK (private source)
 # V2 is the only maintained chart branch.
 # Require clean TypeScript checks for final shared iTick socket APK.
 # Rebuild after enabling native DNSE VN30F1M line alerts.
+# Rebuild with persistent DNSE foreground alerts and unrestricted FVG number settings.
 
 on:
   push:
