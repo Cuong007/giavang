@@ -197,3 +197,5 @@ jobs:
 # Rebuild after correcting Java source line breaks in DNSE MQTT parser.
 
 # Trigger: rebuild VN30 background alert plugin registration 01abee4
+
+# Trigger: rebuild VN30 alert sound async playback and fallback
