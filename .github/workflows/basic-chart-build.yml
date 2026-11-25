@@ -201,3 +201,5 @@ jobs:
 # Trigger: rebuild VN30 alert sound async playback and fallback
 
 # Trigger: build VN30 alert diagnostics and hidden-alert sync fixes
+
+# Trigger: decode DNSE plaintext JSON OHLC payload for VN30 alert f228f91
