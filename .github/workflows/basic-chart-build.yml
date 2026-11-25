@@ -189,3 +189,5 @@ jobs:
             --target "$SOURCE_BRANCH" \
             --title "$TITLE" \
             --notes "APK build by public runner in Cuong007/giavang. Source branch: $SOURCE_BRANCH; source commit: $SOURCE_SHA."
+
+# Rebuild after declaring the native DNSE foreground service in AndroidManifest.
