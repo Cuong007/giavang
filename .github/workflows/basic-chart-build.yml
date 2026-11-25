@@ -199,3 +199,5 @@ jobs:
 # Trigger: rebuild VN30 background alert plugin registration 01abee4
 
 # Trigger: rebuild VN30 alert sound async playback and fallback
+
+# Trigger: build VN30 alert diagnostics and hidden-alert sync fixes
