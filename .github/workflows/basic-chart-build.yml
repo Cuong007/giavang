@@ -193,3 +193,5 @@ jobs:
 # Rebuild after declaring the native DNSE foreground service in AndroidManifest.
 
 # Rebuild VN30 after correcting MQTT 5 CONNACK reason-code parsing.
+
+# Rebuild after correcting Java source line breaks in DNSE MQTT parser.
