@@ -207,3 +207,5 @@ jobs:
 # Trigger: VN30 alert evaluates DNSE tick matchPrice, never candle close c6c05f3
 
 # Trigger: correct DNSE tick topic constants after compile verification dec80cd
+
+# Trigger: correct MQTT PUBLISH scope and braces for tick decoder 5e78e6b
