@@ -4,6 +4,7 @@ name: Build Basic Chart APK (private source)
 # Rebuild after enabling native DNSE VN30F1M line alerts.
 # Rebuild with persistent DNSE foreground alerts and unrestricted FVG number settings.
 # Rebuild with native-only Android alert evaluation and DNSE silence watchdog.
+# Rebuild with VN30 foreground WebView fallback and top-priority Real price label.
 
 on:
   push:
