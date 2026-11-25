@@ -205,3 +205,5 @@ jobs:
 # Trigger: decode DNSE plaintext JSON OHLC payload for VN30 alert f228f91
 
 # Trigger: VN30 alert evaluates DNSE tick matchPrice, never candle close c6c05f3
+
+# Trigger: correct DNSE tick topic constants after compile verification dec80cd
