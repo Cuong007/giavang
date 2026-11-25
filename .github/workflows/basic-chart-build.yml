@@ -3,6 +3,7 @@ name: Build Basic Chart APK (private source)
 # Require clean TypeScript checks for final shared iTick socket APK.
 # Rebuild after enabling native DNSE VN30F1M line alerts.
 # Rebuild with persistent DNSE foreground alerts and unrestricted FVG number settings.
+# Rebuild with native-only Android alert evaluation and DNSE silence watchdog.
 
 on:
   push:
