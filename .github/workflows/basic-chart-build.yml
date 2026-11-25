@@ -191,3 +191,5 @@ jobs:
             --notes "APK build by public runner in Cuong007/giavang. Source branch: $SOURCE_BRANCH; source commit: $SOURCE_SHA."
 
 # Rebuild after declaring the native DNSE foreground service in AndroidManifest.
+
+# Rebuild VN30 after correcting MQTT 5 CONNACK reason-code parsing.
