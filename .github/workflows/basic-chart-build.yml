@@ -217,3 +217,5 @@ jobs:
 # Trigger build after correcting Java source line breaks.
 
 # Trigger build with raw MQTT payload HEX and ASCII diagnostics 700624f
+
+# Trigger protobuf varint parser fix dcd126d
