@@ -221,3 +221,5 @@ jobs:
 # Trigger protobuf varint parser fix dcd126d
 
 # Trigger: subscribe VN30F1M Tick using current KRX contract 41I1GC000 and accept KRX symbol in matchPrice decoder.
+
+# Trigger: port V1 stable VN30F1M OHLC-close realtime quote flow into V2 alerts; no monthly contract hardcoding.
