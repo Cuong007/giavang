@@ -211,3 +211,5 @@ jobs:
 # Trigger: correct MQTT PUBLISH scope and braces for tick decoder 5e78e6b
 
 # Trigger: DNSE payload/topic diagnostics and plaintext OHLC+tick topic subscriptions 2ceff95
+
+# Trigger: fix literal escaped newline compile errors 41e32eb
