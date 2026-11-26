@@ -237,3 +237,5 @@ jobs:
 # Trigger: compile final notification banner Java quoting and 2.1.3.
 
 # Trigger Basic Chart 2.1.4: exact build39 OB rank logic, no OB min/max settings, first-launch notification permission.
+
+# Retry Basic Chart 2.1.4 after removing the unused OB range variable.
