@@ -229,3 +229,5 @@ jobs:
 # Trigger: build Basic Chart 2.1 with notification permission, OB ranking labels/settings and alert price list.
 
 # Trigger: retry Basic Chart 2.1 after fixing OB ranking settings JSX type assertions.
+
+# Trigger: fix FVG OB ranking syntax and rebuild Basic Chart 2.1.2.
