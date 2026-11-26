@@ -219,3 +219,5 @@ jobs:
 # Trigger build with raw MQTT payload HEX and ASCII diagnostics 700624f
 
 # Trigger protobuf varint parser fix dcd126d
+
+# Trigger: subscribe VN30F1M Tick using current KRX contract 41I1GC000 and accept KRX symbol in matchPrice decoder.
