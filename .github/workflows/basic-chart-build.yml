@@ -149,7 +149,7 @@ jobs:
           apk_candidates.sort(key=lambda path: os.path.getmtime(path), reverse=True)
           selected = apk_candidates[0]
           source_branch = os.environ.get("SOURCE_BRANCH", "")
-          apk_name = "Basic_chart_2.0.apk" if source_branch == "basic-chart-v2" else "Basic_chart.apk"
+          apk_name = "Basic_chart_2.1.apk" if source_branch == "basic-chart-v2" else "Basic_chart.apk"
           target = os.path.join("/tmp", apk_name)
           with open(selected, "rb") as src, open(target, "wb") as dst:
               dst.write(src.read())
@@ -175,12 +175,12 @@ jobs:
           SOURCE_SHA="$(git -C /tmp/basic-chart-source rev-parse HEAD)"
           TAG="basic-chart-${SOURCE_BRANCH}-v${VERSION}-build${GITHUB_RUN_NUMBER}"
           if [[ "$SOURCE_BRANCH" == "basic-chart-v2" ]]; then
-            TITLE="Basic Chart 2.0 v${VERSION} (build ${GITHUB_RUN_NUMBER})"
+            TITLE="Basic Chart 2.1 v${VERSION} (build ${GITHUB_RUN_NUMBER})"
           else
             TITLE="Basic Chart v${VERSION} (build ${GITHUB_RUN_NUMBER})"
           fi
           if [[ "$SOURCE_BRANCH" == "basic-chart-v2" ]]; then
-            APK_NAME="Basic_chart_2.0.apk"
+            APK_NAME="Basic_chart_2.1.apk"
           else
             APK_NAME="Basic_chart.apk"
           fi
@@ -223,3 +223,5 @@ jobs:
 # Trigger: subscribe VN30F1M Tick using current KRX contract 41I1GC000 and accept KRX symbol in matchPrice decoder.
 
 # Trigger: port V1 stable VN30F1M OHLC-close realtime quote flow into V2 alerts; no monthly contract hardcoding.
+
+# Trigger: build Basic Chart 2.1 with notification permission, OB ranking labels/settings and alert price list.
