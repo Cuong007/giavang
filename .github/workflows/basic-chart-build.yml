@@ -213,3 +213,5 @@ jobs:
 # Trigger: DNSE payload/topic diagnostics and plaintext OHLC+tick topic subscriptions 2ceff95
 
 # Trigger: fix literal escaped newline compile errors 41e32eb
+
+# Trigger build after correcting Java source line breaks.
