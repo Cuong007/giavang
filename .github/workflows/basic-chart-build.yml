@@ -239,3 +239,5 @@ jobs:
 # Trigger Basic Chart 2.1.4: exact build39 OB rank logic, no OB min/max settings, first-launch notification permission.
 
 # Retry Basic Chart 2.1.4 after removing the unused OB range variable.
+
+# Trigger build from restored v2.1.0 build39 source with unrestricted FVG numeric inputs.
