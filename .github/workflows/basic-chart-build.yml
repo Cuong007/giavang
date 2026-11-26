@@ -233,3 +233,5 @@ jobs:
 # Trigger: fix FVG OB ranking syntax and rebuild Basic Chart 2.1.2.
 
 # Trigger: Basic Chart 2.1.3 Float notification banner and build39 OB rank restore with equal-edge tie-break.
+
+# Trigger: compile final notification banner Java quoting and 2.1.3.
