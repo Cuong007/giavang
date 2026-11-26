@@ -231,3 +231,5 @@ jobs:
 # Trigger: retry Basic Chart 2.1 after fixing OB ranking settings JSX type assertions.
 
 # Trigger: fix FVG OB ranking syntax and rebuild Basic Chart 2.1.2.
+
+# Trigger: Basic Chart 2.1.3 Float notification banner and build39 OB rank restore with equal-edge tie-break.
