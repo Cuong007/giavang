@@ -25,12 +25,13 @@ on:
         type: choice
         options:
           - basic-chart-v2
+          - basic-chart-v2.2.0
 
 permissions:
   contents: read
 
 concurrency:
-  group: basic-chart-build-${{ inputs.source_branch || 'basic-chart-v2' }}
+  group: basic-chart-build-${{ inputs.source_branch || 'basic-chart-v2.2.0' }}
   cancel-in-progress: false
 
 jobs:
@@ -55,7 +56,7 @@ jobs:
         env:
           VIEWCHART_TOKEN: ${{ secrets.VIEWCHART_TOKEN }}
           VIEWCHART_READ_TOKEN: ${{ secrets.VIEWCHART_READ_TOKEN }}
-          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v2' }}
+          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v2.2.0' }}
         run: |
           set -euo pipefail
           TOKEN="${VIEWCHART_TOKEN:-${VIEWCHART_READ_TOKEN:-}}"
@@ -104,7 +105,7 @@ jobs:
 
       - name: Run private build recipe (without pushing source)
         env:
-          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v2' }}
+          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v2.2.0' }}
         run: |
           set -euo pipefail
           cd /tmp/basic-chart-source
@@ -151,7 +152,7 @@ jobs:
           apk_candidates.sort(key=lambda path: os.path.getmtime(path), reverse=True)
           selected = apk_candidates[0]
           source_branch = os.environ.get("SOURCE_BRANCH", "")
-          apk_name = "Basic_chart_2.1.apk" if source_branch == "basic-chart-v2" else "Basic_chart.apk"
+          apk_name = "Basic_chart_2.2.0.apk" if source_branch == "basic-chart-v2.2.0" else ("Basic_chart_2.1.apk" if source_branch == "basic-chart-v2" else "Basic_chart.apk")
           target = os.path.join("/tmp", apk_name)
           with open(selected, "rb") as src, open(target, "wb") as dst:
               dst.write(src.read())
@@ -163,7 +164,7 @@ jobs:
         env:
           VIEWCHART_TOKEN: ${{ secrets.VIEWCHART_TOKEN }}
           VIEWCHART_READ_TOKEN: ${{ secrets.VIEWCHART_READ_TOKEN }}
-          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v2' }}
+          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v2.2.0' }}
           GH_TOKEN: ${{ secrets.VIEWCHART_TOKEN || secrets.VIEWCHART_READ_TOKEN }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
@@ -176,14 +177,14 @@ jobs:
           VERSION="$(tr -d '[:space:]' < /tmp/basic-chart-source/BASIC_CHART_VERSION)"
           SOURCE_SHA="$(git -C /tmp/basic-chart-source rev-parse HEAD)"
           TAG="basic-chart-${SOURCE_BRANCH}-v${VERSION}-build${GITHUB_RUN_NUMBER}"
-          if [[ "$SOURCE_BRANCH" == "basic-chart-v2" ]]; then
+          if [[ "$SOURCE_BRANCH" == "basic-chart-v2.2.0" ]]; then
+            TITLE="Basic Chart 2.2.0 v${VERSION} (build ${GITHUB_RUN_NUMBER})"
+            APK_NAME="Basic_chart_2.2.0.apk"
+          elif [[ "$SOURCE_BRANCH" == "basic-chart-v2" ]]; then
             TITLE="Basic Chart 2.1 v${VERSION} (build ${GITHUB_RUN_NUMBER})"
-          else
-            TITLE="Basic Chart v${VERSION} (build ${GITHUB_RUN_NUMBER})"
-          fi
-          if [[ "$SOURCE_BRANCH" == "basic-chart-v2" ]]; then
             APK_NAME="Basic_chart_2.1.apk"
           else
+            TITLE="Basic Chart v${VERSION} (build ${GITHUB_RUN_NUMBER})"
             APK_NAME="Basic_chart.apk"
           fi
           gh release create "$TAG" "/tmp/$APK_NAME" \
