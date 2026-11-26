@@ -225,3 +225,5 @@ jobs:
 # Trigger: port V1 stable VN30F1M OHLC-close realtime quote flow into V2 alerts; no monthly contract hardcoding.
 
 # Trigger: build Basic Chart 2.1 with notification permission, OB ranking labels/settings and alert price list.
+
+# Trigger: retry Basic Chart 2.1 after fixing OB ranking settings JSX type assertions.
