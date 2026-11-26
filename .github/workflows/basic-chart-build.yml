@@ -7,6 +7,7 @@ name: Build Basic Chart APK (private source)
 # Rebuild with VN30 foreground WebView fallback and top-priority Real price label.
 # Ensure the drawing-axis label override is preserved by the clean-source Android build.
 # Rebuild 2.1.2: restore original OB rank ordering with equal-edge-only tie breakers; fix permission prompt overlay conflict.
+# Trigger final 2.1.2 verification build.
 # Rebuild with one native DNSE MQTT stream shared by chart and alerts.
 # Rebuild after persisting DNSE single-stream ownership across service restarts.
 # Rebuild with explicit connected state events from the shared DNSE service.
