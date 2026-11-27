@@ -18,6 +18,7 @@ name: Build Basic Chart APK (private source)
 
 # Rebuild V3 after making each RANK registration start its own background status notification immediately.
 # Rebuild V3: compact duplicate OB foreground status and correct real newline rendering.
+# Build V3: merge iTick, DNSE and RANK OB into one persistent notification per instrument; diagnose missing OB rank events.
 on:
   push:
     branches: [main]
