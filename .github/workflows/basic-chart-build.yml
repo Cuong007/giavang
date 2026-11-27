@@ -26,12 +26,13 @@ on:
         options:
           - basic-chart-v2
           - basic-chart-v2.2.0
+          - basic-chart-v3
 
 permissions:
   contents: read
 
 concurrency:
-  group: basic-chart-build-${{ inputs.source_branch || 'basic-chart-v2.2.0' }}
+  group: basic-chart-build-${{ inputs.source_branch || 'basic-chart-v3' }}
   cancel-in-progress: false
 
 jobs:
@@ -152,7 +153,7 @@ jobs:
           apk_candidates.sort(key=lambda path: os.path.getmtime(path), reverse=True)
           selected = apk_candidates[0]
           source_branch = os.environ.get("SOURCE_BRANCH", "")
-          apk_name = "Basic_chart_2.2.0.apk" if source_branch == "basic-chart-v2.2.0" else ("Basic_chart_2.1.apk" if source_branch == "basic-chart-v2" else "Basic_chart.apk")
+          apk_name = "Basic_chart_3.0.0.apk" if source_branch == "basic-chart-v3" else ("Basic_chart_2.2.0.apk" if source_branch == "basic-chart-v2.2.0" else ("Basic_chart_2.1.apk" if source_branch == "basic-chart-v2" else "Basic_chart.apk"))
           target = os.path.join("/tmp", apk_name)
           with open(selected, "rb") as src, open(target, "wb") as dst:
               dst.write(src.read())
@@ -177,7 +178,10 @@ jobs:
           VERSION="$(tr -d '[:space:]' < /tmp/basic-chart-source/BASIC_CHART_VERSION)"
           SOURCE_SHA="$(git -C /tmp/basic-chart-source rev-parse HEAD)"
           TAG="basic-chart-${SOURCE_BRANCH}-v${VERSION}-build${GITHUB_RUN_NUMBER}"
-          if [[ "$SOURCE_BRANCH" == "basic-chart-v2.2.0" ]]; then
+          if [[ "$SOURCE_BRANCH" == "basic-chart-v3" ]]; then
+            TITLE="Basic Chart V3 v${VERSION} (build ${GITHUB_RUN_NUMBER})"
+            APK_NAME="Basic_chart_3.0.0.apk"
+          elif [[ "$SOURCE_BRANCH" == "basic-chart-v2.2.0" ]]; then
             TITLE="Basic Chart 2.2.0 v${VERSION} (build ${GITHUB_RUN_NUMBER})"
             APK_NAME="Basic_chart_2.2.0.apk"
           elif [[ "$SOURCE_BRANCH" == "basic-chart-v2" ]]; then
