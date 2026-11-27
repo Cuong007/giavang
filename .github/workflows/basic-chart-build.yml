@@ -17,6 +17,7 @@ name: Build Basic Chart APK (private source)
 # Build V3 with independent persistent status notifications for each registered iTick OB symbol.
 
 # Rebuild V3 after making each RANK registration start its own background status notification immediately.
+# Rebuild V3: compact duplicate OB foreground status and correct real newline rendering.
 on:
   push:
     branches: [main]
