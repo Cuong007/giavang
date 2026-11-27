@@ -225,6 +225,8 @@ jobs:
 # Trigger build after correcting Java source line breaks.
 
 # Trigger build with raw MQTT payload HEX and ASCII diagnostics 700624f
+# Retry transient Maven Central 429 dependency throttling up to three times.
+# Trigger build after V3 native iTick chart switch fixes.
 
 # Trigger protobuf varint parser fix dcd126d
 
