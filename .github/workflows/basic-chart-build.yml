@@ -23,6 +23,7 @@ name: Build Basic Chart APK (private source)
 # Retry V3 after fixing the obsolete rank quote receiver call in the merged notification service.
 # Rebuild V3: per-symbol persistent alerts, full-session OB history, and audible rank channel.
 # Retry V3 build after fixing checked JSONException in multi-symbol alert map.
+# Build V3: independent real-price refresh and custom Rank OB sound controls.
 on:
   push:
     branches: [main]
