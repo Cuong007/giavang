@@ -57,7 +57,7 @@ jobs:
         env:
           VIEWCHART_TOKEN: ${{ secrets.VIEWCHART_TOKEN }}
           VIEWCHART_READ_TOKEN: ${{ secrets.VIEWCHART_READ_TOKEN }}
-          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v2.2.0' }}
+          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v3' }}
         run: |
           set -euo pipefail
           TOKEN="${VIEWCHART_TOKEN:-${VIEWCHART_READ_TOKEN:-}}"
@@ -106,7 +106,7 @@ jobs:
 
       - name: Run private build recipe (without pushing source)
         env:
-          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v2.2.0' }}
+          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v3' }}
         run: |
           set -euo pipefail
           cd /tmp/basic-chart-source
@@ -165,7 +165,7 @@ jobs:
         env:
           VIEWCHART_TOKEN: ${{ secrets.VIEWCHART_TOKEN }}
           VIEWCHART_READ_TOKEN: ${{ secrets.VIEWCHART_READ_TOKEN }}
-          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v2.2.0' }}
+          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v3' }}
           GH_TOKEN: ${{ secrets.VIEWCHART_TOKEN || secrets.VIEWCHART_READ_TOKEN }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
