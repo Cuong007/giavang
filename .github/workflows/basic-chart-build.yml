@@ -294,3 +294,5 @@ jobs:
 # Trigger Build82 after fixing Rank OB checkbox syntax errors identified in Build81.
 
 # Trigger Build83 for non-blocking Rank OB dialog and concise status price display.
+
+# Trigger Build84 after fixing the status price formatter argument.
