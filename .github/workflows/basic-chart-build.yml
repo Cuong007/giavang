@@ -276,3 +276,5 @@ jobs:
 # Trigger V3 build: preserve alert thresholds, display all OB registrations immediately, and refresh native quote status.
 
 # Trigger V3 build with alert A/B labels and expanded multiline OB symbol status.
+
+# Trigger V3 rebuild after clearing stale quote state on alert symbol switches.
