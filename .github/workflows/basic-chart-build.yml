@@ -251,3 +251,5 @@ jobs:
 # Trigger Basic Chart build for OB tie-break and Android notification permission gate.
 
 # Trigger V3 multi-symbol OB Rank monitor and real-tick notification verification.
+
+# Trigger V3 build: fix real-time quote display, RANK asset compatibility and per-symbol notification IDs.
