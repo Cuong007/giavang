@@ -296,3 +296,5 @@ jobs:
 # Trigger Build83 for non-blocking Rank OB dialog and concise status price display.
 
 # Trigger Build84 after fixing the status price formatter argument.
+
+# Trigger Build85: restore Rank OB native methods after clean Android shell generation.
