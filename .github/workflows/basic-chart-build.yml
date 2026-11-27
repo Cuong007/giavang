@@ -255,3 +255,5 @@ jobs:
 # Trigger V3 build: fix real-time quote display, RANK asset compatibility and per-symbol notification IDs.
 
 # Trigger V3 build: shared multi-symbol RANK WebSocket and audible notification channel fixes.
+
+# Trigger V3 build: reconnect native iTick socket on chart switches and display active-chart tick plus RANK quotes.
