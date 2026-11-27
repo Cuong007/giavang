@@ -1,5 +1,5 @@
 name: Build Basic Chart APK (private source)
-# Build V3 with the native OB polling engine and configurable background monitor.
+# Retry V3 native OB polling build after TypeScript config type fix.
 # V2 is the only maintained chart branch.
 # Require clean TypeScript checks for final shared iTick socket APK.
 # Rebuild after enabling native DNSE VN30F1M line alerts.
