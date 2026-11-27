@@ -24,6 +24,7 @@ name: Build Basic Chart APK (private source)
 # Rebuild V3: per-symbol persistent alerts, full-session OB history, and audible rank channel.
 # Retry V3 build after fixing checked JSONException in multi-symbol alert map.
 # Build V3: independent real-price refresh and custom Rank OB sound controls.
+# Retry after correcting toolbar TS escaped newlines.
 on:
   push:
     branches: [main]
