@@ -1,5 +1,5 @@
 name: Build Basic Chart APK (private source)
-# Rebuild V3 after adding the native background-monitor service foundation.
+# Rebuild V3 with native OB rank analyzer and its unit tests.
 # V2 is the only maintained chart branch.
 # Require clean TypeScript checks for final shared iTick socket APK.
 # Rebuild after enabling native DNSE VN30F1M line alerts.
