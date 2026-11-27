@@ -290,3 +290,5 @@ jobs:
 # Trigger V3 build with alert A/B labels and expanded multiline OB symbol status.
 
 # Trigger V3 rebuild after clearing stale quote state on alert symbol switches.
+
+# Trigger Build82 after fixing Rank OB checkbox syntax errors identified in Build81.
