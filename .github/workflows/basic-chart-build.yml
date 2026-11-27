@@ -25,6 +25,7 @@ name: Build Basic Chart APK (private source)
 # Retry V3 build after fixing checked JSONException in multi-symbol alert map.
 # Build V3: independent real-price refresh and custom Rank OB sound controls.
 # Retry after correcting toolbar TS escaped newlines.
+# Retry after adding missing Rank OB toolbar icon import.
 on:
   push:
     branches: [main]
