@@ -14,6 +14,7 @@ name: Build Basic Chart APK (private source)
 # Rebuild with explicit connected state events from the shared DNSE service.
 # Rebuild after fixing the DNSE foreground-service notification compile issue.
 # Build APK without the duplicate automatic Real price-axis label; preserve colored Bid and Ask labels.
+# Build V3 with independent persistent status notifications for each registered iTick OB symbol.
 
 on:
   push:
