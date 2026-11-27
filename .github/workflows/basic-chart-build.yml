@@ -21,6 +21,7 @@ name: Build Basic Chart APK (private source)
 # Build V3: merge iTick, DNSE and RANK OB into one persistent notification per instrument; diagnose missing OB rank events.
 # Build V3: cancel legacy service notification IDs so only merged per-symbol status rows remain.
 # Retry V3 after fixing the obsolete rank quote receiver call in the merged notification service.
+# Rebuild V3: per-symbol persistent alerts, full-session OB history, and audible rank channel.
 on:
   push:
     branches: [main]
