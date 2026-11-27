@@ -16,6 +16,7 @@ name: Build Basic Chart APK (private source)
 # Build APK without the duplicate automatic Real price-axis label; preserve colored Bid and Ask labels.
 # Build V3 with independent persistent status notifications for each registered iTick OB symbol.
 
+# Rebuild V3 after making each RANK registration start its own background status notification immediately.
 on:
   push:
     branches: [main]
