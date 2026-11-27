@@ -249,3 +249,5 @@ jobs:
 # Trigger build from restored v2.1.0 build39 source with unrestricted FVG numeric inputs.
 
 # Trigger Basic Chart build for OB tie-break and Android notification permission gate.
+
+# Trigger V3 multi-symbol OB Rank monitor and real-tick notification verification.
