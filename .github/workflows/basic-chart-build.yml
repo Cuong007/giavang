@@ -292,3 +292,5 @@ jobs:
 # Trigger V3 rebuild after clearing stale quote state on alert symbol switches.
 
 # Trigger Build82 after fixing Rank OB checkbox syntax errors identified in Build81.
+
+# Trigger Build83 for non-blocking Rank OB dialog and concise status price display.
