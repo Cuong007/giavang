@@ -28,6 +28,7 @@ name: Build Basic Chart APK (private source)
 # Retry after adding missing Rank OB toolbar icon import.
 # Rebuild after fixing Rank OB dialog actions and guarding against implicit form submits.
 # Rebuild V3 after allowing iTick crypto OHLC scans without a region metadata field.
+# Rebuild V3 after fixing Rank OB rolling-latest filter dropping delayed completed OHLC events.
 on:
   push:
     branches: [main]
