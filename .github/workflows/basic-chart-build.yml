@@ -298,3 +298,5 @@ jobs:
 # Trigger Build84 after fixing the status price formatter argument.
 
 # Trigger Build85: restore Rank OB native methods after clean Android shell generation.
+
+# Trigger V3 rebuild: restore Rank OB status notification, custom audio playback and preference-based vibration.
