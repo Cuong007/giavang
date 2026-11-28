@@ -44,12 +44,13 @@ on:
           - basic-chart-v2
           - basic-chart-v2.2.0
           - basic-chart-v3
+          - basic-chart-build77-fix
 
 permissions:
   contents: read
 
 concurrency:
-  group: basic-chart-build-${{ inputs.source_branch || 'basic-chart-v3' }}
+  group: basic-chart-build-${{ inputs.source_branch || 'basic-chart-build77-fix' }}
   cancel-in-progress: false
 
 jobs:
@@ -309,4 +310,5 @@ jobs:
 
 # Rebuild V3: restore the proven Build77 Rank OB notification channel and notify path, then add sound and vibration.
 
-# build trigger: iTick-1500-paging-20261128
+# build trigger: Build77 baseline fixes status price decoupling and manual chart refresh
+
