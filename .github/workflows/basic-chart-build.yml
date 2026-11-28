@@ -30,6 +30,7 @@ name: Build Basic Chart APK (private source)
 # Rebuild V3 after allowing iTick crypto OHLC scans without a region metadata field.
 # Rebuild V3 after fixing Rank OB rolling-latest filter dropping delayed completed OHLC events.
 # Rebuild Rank OB using Build75 notification delivery, with configured sound and direct vibration feedback.
+# Rebuild V3: restore Build90 monitor and require 1500 completed OHLC bars, loaded 500 per REST across three requests.
 on:
   push:
     branches: [main]
