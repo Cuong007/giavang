@@ -302,3 +302,5 @@ jobs:
 # Trigger V3 rebuild: restore Rank OB status notification, custom audio playback and preference-based vibration.
 
 # Trigger V3 rebuild: decouple Rank OB feedback and declare VIBRATE permission.
+
+# Rebuild V3: restore the proven Build77 Rank OB notification channel and notify path, then add sound and vibration.
