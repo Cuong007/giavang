@@ -1,5 +1,5 @@
 name: Build Basic Chart APK (private source)
-# Build92: restore complete Build75 Rank OB monitor; add selected sound and vibration.
+# Build92 retry: transient Maven Central HTTP 429 during Gradle dependency resolution.
 # V2 is the only maintained chart branch.
 # Require clean TypeScript checks for final shared iTick socket APK.
 # Rebuild after enabling native DNSE VN30F1M line alerts.
