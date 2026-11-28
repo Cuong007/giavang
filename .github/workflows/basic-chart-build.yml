@@ -300,3 +300,5 @@ jobs:
 # Trigger Build85: restore Rank OB native methods after clean Android shell generation.
 
 # Trigger V3 rebuild: restore Rank OB status notification, custom audio playback and preference-based vibration.
+
+# Trigger V3 rebuild: decouple Rank OB feedback and declare VIBRATE permission.
