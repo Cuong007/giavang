@@ -75,7 +75,7 @@ jobs:
         env:
           VIEWCHART_TOKEN: ${{ secrets.VIEWCHART_TOKEN }}
           VIEWCHART_READ_TOKEN: ${{ secrets.VIEWCHART_READ_TOKEN }}
-          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v3' }}
+          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-build77-fix' }}
         run: |
           set -euo pipefail
           TOKEN="${VIEWCHART_TOKEN:-${VIEWCHART_READ_TOKEN:-}}"
@@ -124,7 +124,7 @@ jobs:
 
       - name: Run private build recipe (without pushing source)
         env:
-          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v3' }}
+          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-build77-fix' }}
         run: |
           set -euo pipefail
           cd /tmp/basic-chart-source
@@ -196,7 +196,7 @@ jobs:
         env:
           VIEWCHART_TOKEN: ${{ secrets.VIEWCHART_TOKEN }}
           VIEWCHART_READ_TOKEN: ${{ secrets.VIEWCHART_READ_TOKEN }}
-          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-v3' }}
+          SOURCE_BRANCH: ${{ inputs.source_branch || 'basic-chart-build77-fix' }}
           GH_TOKEN: ${{ secrets.VIEWCHART_TOKEN || secrets.VIEWCHART_READ_TOKEN }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
@@ -312,3 +312,5 @@ jobs:
 
 # build trigger: Build77 baseline fixes status price decoupling and manual chart refresh
 
+
+# Build77-only scope: status price decoupling and manual candle refresh.
